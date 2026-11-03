@@ -1,5 +1,7 @@
 import type { SaveGame } from '../types';
 import { WORLD_SCHEMA_VERSION } from '../engine/world';
+import { TEST_FORMAT } from '../data';
+import { DEFAULT_TRAINING } from '../engine/training/training';
 
 /**
  * 세이브 데이터 마이그레이션.
@@ -7,7 +9,27 @@ import { WORLD_SCHEMA_VERSION } from '../engine/world';
  * 예) 1 → 2: MIGRATIONS[1] = (save) => ({ ...save, world: { ...save.world, newField: 기본값 }, schemaVersion: 2 })
  */
 const MIGRATIONS: Record<number, (save: SaveGame) => SaveGame> = {
-  // 현재 버전 1: 마이그레이션 없음
+  // v1 → v2: 재정·이적·훈련 필드 추가, 시즌 기록 키에 구단 id 포함
+  1: (save) => {
+    const w = save.world;
+    const seasonStats: typeof w.seasonStats = {};
+    for (const s of Object.values(w.seasonStats)) seasonStats[`${s.seasonId}:${s.playerId}:${s.clubId}`] = s;
+    const format = { ...TEST_FORMAT, ...w.competition.format };
+    return {
+      ...save,
+      schemaVersion: 2,
+      world: {
+        ...w,
+        competition: { ...w.competition, format },
+        seasonStats,
+        finance: { ledger: [] },
+        transfers: [],
+        incomingOffers: [],
+        training: Object.fromEntries(Object.keys(w.clubs).map((id) => [id, { ...DEFAULT_TRAINING }])),
+        trainingReports: [],
+      },
+    };
+  },
 };
 
 export class SaveVersionError extends Error {}

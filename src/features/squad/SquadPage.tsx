@@ -25,7 +25,7 @@ export function SquadPage() {
       .filter((p) => p.clubId === clubId)
       .filter((p) => filter === 'ALL' || positionGroup(p.positions[0]) === filter)
       .map((p) => {
-        const s = world.seasonStats[seasonStatsKey(world.season.id, p.id)];
+        const s = world.seasonStats[seasonStatsKey(world.season.id, p.id, p.clubId)];
         return { p, ovr: playerOvr(p), age: ageOn(p.birthDate, world.clock.gameDate), apps: s?.appearances ?? 0, goals: s?.goals ?? 0, assists: s?.assists ?? 0, rating: s && s.ratingCount ? s.ratingSum / s.ratingCount : null };
       });
     const val = (r: (typeof list)[0]): number | string => {
@@ -67,7 +67,7 @@ export function SquadPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-xl font-black text-white">선수단</h1>
-        <TestDataBadge text="가상 선수 · 능력치는 게임용 추정치" />
+        <TestDataBadge text={rows.some((r) => r.p.meta.sourceType === 'user-import') ? '가져온 데이터 + 가상 선수 혼합' : '가상 선수 · 능력치는 게임용 추정치'} />
         <select className="input ml-auto w-auto" value={clubId} onChange={(e) => setClubId(e.target.value)} aria-label="구단 선택">
           {Object.values(world.clubs).map((c) => <option key={c.id} value={c.id}>{c.name}{c.id === world.userClubId ? ' (내 팀)' : ''}</option>)}
         </select>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, Outlet, Navigate, useNavigate } from 'react-router-dom';
-import { CalendarDays, LayoutDashboard, ListOrdered, Menu, Save, Shirt, Swords, Users, X, LogOut, Loader2 } from 'lucide-react';
+import { CalendarDays, Dumbbell, LayoutDashboard, ListOrdered, Menu, Save, Shirt, Swords, Users, X, LogOut, Loader2, ArrowLeftRight, Wallet } from 'lucide-react';
 import { useGame } from '../store/gameStore';
 import { ClockControls } from '../components/ClockControls';
 import { ClubBadge } from '../components/ClubBadge';
@@ -15,6 +15,9 @@ const NAV = [
   { to: '/game/fixtures', label: '일정', icon: CalendarDays },
   { to: '/game/standings', label: '순위', icon: ListOrdered },
   { to: '/game/match', label: '경기', icon: Swords },
+  { to: '/game/training', label: '훈련', icon: Dumbbell },
+  { to: '/game/transfers', label: '이적시장', icon: ArrowLeftRight },
+  { to: '/game/finance', label: '재정', icon: Wallet },
   { to: '/game/saves', label: '저장·설정', icon: Save },
 ];
 

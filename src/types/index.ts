@@ -130,7 +130,14 @@ export interface Player {
   meta: DataSourceMeta;
   /** 게임 내 수정 사항(이적 등) 표시 */
   gameOverride?: Partial<Pick<Player, 'clubId' | 'shirtNumber'>>;
+  /** 능력치 출처: 가져온 값인지 게임이 추정한 값인지 */
+  attributesSource?: 'imported' | 'estimated';
+  /** 개인 훈련 집중 분야 (없으면 팀 훈련을 따름) */
+  trainingFocus?: TrainingFocus | null;
 }
+
+/** 무소속 선수의 clubId */
+export const FREE_AGENT = 'free';
 
 export interface PlayerSeasonStats {
   playerId: string;
@@ -219,6 +226,11 @@ export interface CompetitionFormat {
   maxSubstitutionWindows: number;
   benchSize: number;
   yellowCardsForSuspension: number;
+  transferWindows: TransferWindow[];
+  /** 1군 등록 최소/최대 인원 */
+  minSquadSize: number;
+  maxSquadSize: number;
+  maxForeignPlayers: number;
   description: string;
 }
 
@@ -381,6 +393,72 @@ export interface GameClock {
   processedEventIds: string[];
 }
 
+// ───────────── PHASE 2: 재정·이적·계약·훈련 ─────────────
+
+export type FinanceCategory =
+  | 'gate' | 'broadcast' | 'sponsor' | 'prize' | 'transfer-in'
+  | 'wages' | 'operations' | 'transfer-out' | 'compensation';
+
+export interface FinanceTx {
+  id: string;
+  date: GameDate;
+  clubId: string;
+  category: FinanceCategory;
+  /** 만원 단위. 수입은 +, 지출은 - */
+  amount: number;
+  note: string;
+}
+
+export interface TransferWindow {
+  /** MM-DD */
+  start: string;
+  end: string;
+  label: string;
+}
+
+export interface Transfer {
+  id: string;
+  playerId: string;
+  fromClubId: string;
+  toClubId: string;
+  fee: number;
+  date: GameDate;
+  type: 'transfer' | 'free' | 'release' | 'contract-expired';
+}
+
+export type OfferStatus = 'pending' | 'accepted' | 'rejected' | 'countered' | 'withdrawn' | 'completed' | 'expired';
+
+/** 다른 구단이 사용자 선수에게 보낸 이적 제안 */
+export interface IncomingOffer {
+  id: string;
+  playerId: string;
+  fromClubId: string;
+  fee: number;
+  date: GameDate;
+  expiresOn: GameDate;
+  status: OfferStatus;
+}
+
+export type TrainingFocus = 'balanced' | 'attack' | 'defense' | 'passing' | 'physical' | 'rest';
+export type TrainingIntensity = 'low' | 'normal' | 'high';
+
+export interface TrainingPlan {
+  focus: TrainingFocus;
+  intensity: TrainingIntensity;
+}
+
+export interface TrainingReportEntry {
+  playerId: string;
+  ovrBefore: number;
+  ovrAfter: number;
+  changed: { key: AttributeKey; delta: number }[];
+}
+
+export interface TrainingReport {
+  date: GameDate;
+  entries: TrainingReportEntry[];
+}
+
 export interface WorldState {
   competition: Competition;
   season: Season;
@@ -398,6 +476,12 @@ export interface WorldState {
   inbox: InboxItem[];
   /** 전역 난수 시드 */
   worldSeed: number;
+  finance: { ledger: FinanceTx[] };
+  transfers: Transfer[];
+  incomingOffers: IncomingOffer[];
+  /** 구단별 팀 훈련 계획 (없으면 기본값) */
+  training: Record<string, TrainingPlan>;
+  trainingReports: TrainingReport[];
   /** 진행 중인 사용자 경기 (킥오프·하프타임에 저장되어 새로고침 후 이어서 진행) */
   liveMatch: import('../engine/match/engine').MatchState | null;
 }

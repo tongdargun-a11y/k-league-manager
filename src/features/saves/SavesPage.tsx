@@ -48,7 +48,7 @@ export function SavesPage() {
           <button className="btn-ghost" onClick={exportJson} title="세이브를 JSON 파일로 내려받기 (백업용)"><Download size={16} /> 백업 파일</button>
         </div>
         <p className="mt-2 text-xs text-slate-400">마지막 저장: {lastSavedAt ? new Date(lastSavedAt).toLocaleString('ko-KR') : '없음'} · 세이브 버전 v{WORLD_SCHEMA_VERSION}</p>
-        <p className="mt-1 text-xs text-slate-500">자동 저장 시점: 새 게임 생성, 날짜 진행 7일마다, 날짜 진행 정지·경기일 도착, 킥오프·하프타임, 경기 결과 반영 후. 저장은 브라우저(IndexedDB)에만 되며 다른 기기와 공유되지 않습니다.</p>
+        <p className="mt-1 text-xs text-slate-500">자동 저장 시점: 새 게임 생성, 날짜 진행 7일마다, 날짜 진행 정지·경기일 도착·이적 제안 도착, 킥오프·하프타임, 경기 결과 반영 후. 저장은 브라우저(IndexedDB)에만 되며 다른 기기와 공유되지 않습니다.</p>
       </Panel>
 
       <Panel title="세이브 목록">
@@ -82,7 +82,7 @@ export function SavesPage() {
           <li>선수 이름은 무작위 조합으로 생성한 가상 인물이며 실존 선수와 무관합니다.</li>
           <li>선수 사진은 권리가 확인된 파일만 사용합니다. 현재는 포지션별 기본 실루엣을 표시합니다.</li>
           <li>일정과 대회 규칙은 테스트용 설정(src/data/index.ts)이며 실제 시즌 일정과 다릅니다.</li>
-          <li>실제 데이터 CSV/JSON 가져오기 기능은 다음 단계에서 추가됩니다.</li>
+          <li>직접 확보한 선수 데이터는 타이틀 화면의 'CSV/JSON 가져오기'로 데이터셋을 만든 뒤 새 게임에서 선택할 수 있습니다. (진행 중인 세이브에는 적용되지 않습니다)</li>
         </ul>
       </Panel>
     </div>

@@ -15,15 +15,23 @@ import { pickBestLineup, sanitizeLineup } from './match/lineup';
 import { buildReport, createMatch, matchAftermath, simulateToEnd, type MatchState } from './match/engine';
 import { addDays } from '../utils/date';
 import { hashString } from '../utils/rng';
-import { clamp, playerOvr } from './ratings/ovr';
+import { addInbox } from './inbox';
+export { addInbox } from './inbox';
+import { clamp, playerOvr, positionGroup } from './ratings/ovr';
+import { FREE_AGENT } from '../types';
+import { TICKET_PRICE, estimateAttendance, prizeMoney, processMonthly, recordTx, weeklyWageBill } from './finance/finance';
+import { processContracts, processTransferDay } from './transfers/transfers';
+import { DEFAULT_TRAINING, INTENSITY_INJURY, INTENSITY_RECOVERY, planFor, processWeeklyTraining } from './training/training';
+import { createRng } from '../utils/rng';
+import { weekday } from '../utils/date';
 
-export const WORLD_SCHEMA_VERSION = 1;
+export const WORLD_SCHEMA_VERSION = 2;
 
 // ───────────────────────── 새 게임 ─────────────────────────
 
 const AI_FORMATIONS: Tactic['formation'][] = ['4-4-2', '4-3-3', '4-2-3-1', '3-5-2', '4-1-4-1', '3-4-3'];
 
-export function createNewWorld(params: { managerName: string; clubId: string; seed?: number; clubs?: Club[] }): WorldState {
+export function createNewWorld(params: { managerName: string; clubId: string; seed?: number; clubs?: Club[]; importedPlayers?: Player[] }): WorldState {
   const clubs = params.clubs ?? TEST_CLUBS;
   if (!clubs.some((c) => c.id === params.clubId)) throw new Error(`존재하지 않는 구단: ${params.clubId}`);
   const seed = params.seed ?? hashString(params.managerName + params.clubId) ^ 0x5bd1e995;
@@ -35,7 +43,20 @@ export function createNewWorld(params: { managerName: string; clubId: string; se
   const players: Record<string, Player> = {};
   for (const c of clubs) {
     clubMap[c.id] = c;
-    for (const p of generateTestSquad(c, startDate)) players[p.id] = p;
+    const imported = (params.importedPlayers ?? []).filter((p) => p.clubId === c.id);
+    for (const p of mergeSquad(c, imported, startDate)) players[p.id] = p;
+  }
+  // 재정: 주급 예산은 현재 주급 총액 기준, 이적 예산은 평판 기준 (게임용 추정)
+  for (const c of clubs) {
+    const bill = weeklyWageBill(c.id, players);
+    clubMap[c.id] = {
+      ...c,
+      finances: {
+        balance: Math.round(bill * 4.33 * 3 + c.reputation * 1500),
+        transferBudget: Math.round(c.reputation * 1000),
+        wageBudget: Math.round((bill * 1.12) / 100) * 100,
+      },
+    };
   }
   const clubIds = clubs.map((c) => c.id);
   const fixtures = generateFixtures({ seasonId, competitionId: TEST_COMPETITION.id, clubIds, format, startDate })
@@ -85,6 +106,11 @@ export function createNewWorld(params: { managerName: string; clubId: string; se
     inbox: [],
     worldSeed: seed,
     liveMatch: null,
+    finance: { ledger: [] },
+    transfers: [],
+    incomingOffers: [],
+    training: Object.fromEntries(clubs.map((c) => [c.id, { ...DEFAULT_TRAINING }])),
+    trainingReports: [],
   };
   const club = clubMap[params.clubId];
   return addInbox(world, {
@@ -92,16 +118,6 @@ export function createNewWorld(params: { managerName: string; clubId: string; se
     title: `${club.name} 감독 부임`,
     body: `${manager.name} 감독님, ${club.name}에 오신 것을 환영합니다. 개막전까지 선수단과 전술을 점검하세요. (현재 선수 데이터는 테스트용 가상 데이터입니다.)`,
   });
-}
-
-export function addInbox(world: WorldState, item: Omit<InboxItem, 'id' | 'date' | 'read'>): WorldState {
-  const entry: InboxItem = {
-    ...item,
-    id: `inbox-${world.clock.gameDate}-${world.inbox.length + 1}`,
-    date: world.clock.gameDate,
-    read: false,
-  };
-  return { ...world, inbox: [entry, ...world.inbox].slice(0, 200) };
 }
 
 // ───────────────────────── 경기 준비 ─────────────────────────
@@ -150,8 +166,15 @@ function emptySeasonStats(playerId: string, seasonId: string, clubId: string): P
   return { playerId, seasonId, clubId, appearances: 0, starts: 0, minutes: 0, goals: 0, assists: 0, yellowCards: 0, redCards: 0, ratingSum: 0, ratingCount: 0, cleanSheets: 0 };
 }
 
-export function seasonStatsKey(seasonId: string, playerId: string) {
-  return `${seasonId}:${playerId}`;
+/** 시즌·선수·구단별 기록 키 (시즌 중 이적하면 구단별로 따로 쌓인다) */
+export function seasonStatsKey(seasonId: string, playerId: string, clubId: string) {
+  return `${seasonId}:${playerId}:${clubId}`;
+}
+
+/** 이번 시즌 현재 소속 구단 기록 */
+export function currentSeasonStats(world: WorldState, playerId: string): PlayerSeasonStats | undefined {
+  const p = world.players[playerId];
+  return p ? world.seasonStats[seasonStatsKey(world.season.id, playerId, p.clubId)] : undefined;
 }
 
 /**
@@ -190,7 +213,7 @@ export function applyMatchResult(world: WorldState, state: MatchState): WorldSta
   for (const ps of report.players) {
     const p = players[ps.playerId];
     if (!p) continue;
-    const key = seasonStatsKey(seasonId, p.id);
+    const key = seasonStatsKey(seasonId, p.id, p.clubId);
     const s = { ...(seasonStats[key] ?? emptySeasonStats(p.id, seasonId, p.clubId)) };
     s.appearances++;
     if (ps.started) s.starts++;
@@ -278,7 +301,38 @@ export function applyMatchResult(world: WorldState, state: MatchState): WorldSta
     liveMatch: world.liveMatch?.fixtureId === fixture.id ? null : world.liveMatch,
   };
   for (const item of inboxAdds) next = addInbox(next, item);
+  // 홈 경기 입장 수입
+  const homeClub = next.clubs[fixture.homeClubId];
+  const names = Object.fromEntries(Object.values(next.clubs).map((c) => [c.id, c.name]));
+  const rank = computeStandings(next.season.clubIds, next.fixtures, format, names).findIndex((r) => r.clubId === homeClub.id) + 1;
+  const attendance = estimateAttendance(homeClub, rank || 6, next.season.clubIds.length);
+  next = recordTx(next, { date, clubId: homeClub.id, category: 'gate', amount: Math.round(attendance * TICKET_PRICE), note: `${fixture.round}R 홈경기 관중 ${attendance.toLocaleString()}명` });
   return next;
+}
+
+/** 가져온 선수로 구단 선수단 구성. 부족하면 테스트 선수로 22명까지 채운다. 구단 내 등번호 중복은 정리한다. */
+function mergeSquad(club: Club, imported: Player[], startDate: string): Player[] {
+  if (!imported.length) return generateTestSquad(club, startDate);
+  const squad = [...imported];
+  const test = generateTestSquad(club, startDate);
+  const need = (pred: (p: Player) => boolean, n: number) => {
+    for (const t of test) {
+      if (squad.filter(pred).length >= n) break;
+      if (pred(t) && !squad.includes(t)) squad.push(t);
+    }
+  };
+  need((p) => p.positions[0] === 'GK', 2);
+  need((p) => positionGroup(p.positions[0]) === 'DF', 6);
+  need((p) => positionGroup(p.positions[0]) === 'MF', 6);
+  need((p) => positionGroup(p.positions[0]) === 'FW', 3);
+  need(() => true, 22);
+  const used = new Set<number>();
+  return squad.map((p) => {
+    let n = p.shirtNumber;
+    if (!n || used.has(n)) { n = 1; while (used.has(n)) n++; }
+    used.add(n);
+    return n === p.shirtNumber ? p : { ...p, shirtNumber: n };
+  });
 }
 
 function injuryName(days: number): string {
@@ -308,7 +362,7 @@ export function simulateDueAIFixtures(world: WorldState, uptoDate: string): Worl
 
 // ───────────────────────── 하루 진행 ─────────────────────────
 
-export type StopReason = 'match-day' | 'season-end' | 'injury-return' | null;
+export type StopReason = 'match-day' | 'season-end' | 'injury-return' | 'transfer-offer' | null;
 
 export interface AdvanceResult {
   world: WorldState;
@@ -336,7 +390,18 @@ export function advanceDay(world: WorldState): AdvanceResult {
   let stopReason: StopReason = null;
 
   if (!w.clock.processedEventIds.includes(eventKey)) {
-    // 부상 회복
+    // 1) 날짜 증가
+    w = {
+      ...w,
+      clock: {
+        gameDate: newDate,
+        lastProcessedDate: newDate,
+        processedEventIds: [...w.clock.processedEventIds, eventKey].slice(-120),
+      },
+    };
+    // 2) 계약 만료
+    w = processContracts(w, newDate);
+    // 3) 부상 회복 + 체력·컨디션 회복 (훈련 강도 반영)
     const players = { ...w.players };
     const recovered: Player[] = [];
     const remainingInjuries = w.injuries.filter((inj) => {
@@ -350,36 +415,44 @@ export function advanceDay(world: WorldState): AdvanceResult {
       }
       return true;
     });
-    // 체력·컨디션 회복
     for (const p of Object.values(players)) {
       const st = players[p.id].status;
-      const recover = st.injuryId ? 2 : 7 + p.attributes.stamina / 20;
+      const plan = planFor(w, p.clubId);
+      const resting = (p.trainingFocus ?? plan.focus) === 'rest';
+      const recover = st.injuryId ? 2 : 7 + p.attributes.stamina / 20 + INTENSITY_RECOVERY[plan.intensity] + (resting ? 3 : 0);
       players[p.id] = {
         ...players[p.id],
         status: {
           ...st,
           fitness: clamp(st.fitness + recover, 0, 100),
           condition: st.condition + (70 - st.condition) * 0.03,
-          morale: st.morale + (65 - st.morale) * 0.02,
-          sharpness: clamp(st.sharpness - 0.4, 20, 100),
+          morale: clamp(st.morale + (65 - st.morale) * 0.02 + (resting ? 0.3 : 0), 0, 100),
+          sharpness: clamp(st.sharpness - (resting ? 1 : 0.4), 20, 100),
         },
       };
     }
-    w = {
-      ...w,
-      players,
-      injuries: remainingInjuries,
-      clock: {
-        gameDate: newDate,
-        lastProcessedDate: newDate,
-        processedEventIds: [...w.clock.processedEventIds, eventKey].slice(-120),
-      },
-    };
+    w = { ...w, players, injuries: remainingInjuries };
     const mine = recovered.filter((p) => p.clubId === w.userClubId);
     for (const p of mine) {
       w = addInbox(w, { kind: 'injury', title: `${p.name} 부상 복귀`, body: `${p.name} 선수가 부상에서 회복해 훈련에 복귀했습니다.` });
     }
     if (mine.length) stopReason = 'injury-return';
+    // 4) 훈련: 매일 훈련 부상 위험, 매주 월요일 성장 처리
+    w = trainingInjuries(w, newDate);
+    if (weekday(newDate) === 1) {
+      w = processWeeklyTraining(w, newDate);
+      const report = w.trainingReports[0];
+      const grew = report?.entries.filter((e) => e.ovrAfter > e.ovrBefore) ?? [];
+      if (grew.length) {
+        w = addInbox(w, { kind: 'info', title: '주간 훈련 보고', body: `OVR이 오른 선수: ${grew.slice(0, 5).map((e) => `${w.players[e.playerId].name}(${e.ovrBefore}→${e.ovrAfter})`).join(', ')}${grew.length > 5 ? ` 외 ${grew.length - 5}명` : ''}` });
+      }
+    }
+    // 5) 이적 이벤트
+    const offersBefore = w.incomingOffers.length;
+    w = processTransferDay(w, newDate);
+    if (w.incomingOffers.length > offersBefore) stopReason = 'transfer-offer';
+    // 재정: 매월 1일 정산
+    if (newDate.endsWith('-01')) w = processMonthly(w, newDate);
   } else {
     w = { ...w, clock: { ...w.clock, gameDate: newDate } };
   }
@@ -396,6 +469,22 @@ export function advanceDay(world: WorldState): AdvanceResult {
   w = checkSeasonEnd(w);
   if (w.season.status === 'finished') stopReason = 'season-end';
   return { world: w, advanced: true, stopReason };
+}
+
+function trainingInjuries(world: WorldState, date: string): WorldState {
+  const rng = createRng(hashString(`${world.worldSeed}:train-injury:${date}`));
+  let w = world;
+  for (const p of Object.values(world.players)) {
+    if (p.clubId === FREE_AGENT || p.status.injuryId) continue;
+    const plan = planFor(world, p.clubId);
+    if ((p.trainingFocus ?? plan.focus) === 'rest') continue;
+    if (!rng.chance(INTENSITY_INJURY[plan.intensity])) continue;
+    const days = rng.pick([3, 5, 7, 10, 14]);
+    const inj: Injury = { id: `inj-train-${date}-${p.id}`, playerId: p.id, type: '훈련 중 근육 부상', startDate: date, expectedReturnDate: addDays(date, days) };
+    w = { ...w, injuries: [...w.injuries, inj], players: { ...w.players, [p.id]: { ...p, status: { ...p.status, injuryId: inj.id } } } };
+    if (p.clubId === w.userClubId) w = addInbox(w, { kind: 'injury', title: `${p.name} 훈련 중 부상`, body: `${p.name} 선수가 훈련 중 다쳐 약 ${days}일 결장합니다. 훈련 강도가 높을수록 부상 위험이 커집니다.` });
+  }
+  return w;
 }
 
 /** 모든 경기가 끝났으면 시즌 종료 처리 (우승 기록 부여). 멱등. */
@@ -423,6 +512,9 @@ export function checkSeasonEnd(world: WorldState): WorldState {
     season: { ...world.season, status: 'finished' },
     manager: userWon ? { ...world.manager, record: { ...world.manager.record, trophies: world.manager.record.trophies + 1 } } : world.manager,
   };
+  table.forEach((r, i) => {
+    w = recordTx(w, { date: w.clock.gameDate, clubId: r.clubId, category: 'prize', amount: prizeMoney(i + 1), note: `${world.season.label} ${i + 1}위 상금` });
+  });
   const userRank = table.findIndex((r) => r.clubId === world.userClubId) + 1;
   w = addInbox(w, {
     kind: 'season',

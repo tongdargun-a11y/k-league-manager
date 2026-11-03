@@ -34,7 +34,14 @@ export const TEST_FORMAT: CompetitionFormat = {
   maxSubstitutionWindows: 3,
   benchSize: 9,
   yellowCardsForSuspension: 4,
-  description: '테스트용 규칙: 12팀 3회전(33라운드) 리그. 파이널 라운드(스플릿)는 아직 미구현.',
+  transferWindows: [
+    { start: '01-01', end: '03-31', label: '겨울 이적시장' },
+    { start: '07-01', end: '07-31', label: '여름 이적시장' },
+  ],
+  minSquadSize: 18,
+  maxSquadSize: 32,
+  maxForeignPlayers: 6,
+  description: '테스트용 규칙: 12팀 3회전(33라운드) 리그. 파이널 라운드(스플릿)는 아직 미구현. 이적시장 기간·외국인 수 등도 테스트용 설정입니다.',
 };
 
 export const TEST_COMPETITION: Competition = {

@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { datasetRepository, type DatasetSummary } from '../../repositories/saveRepository';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { TEST_CLUBS } from '../../data';
@@ -29,13 +31,17 @@ export function NewGamePage() {
   const [name, setName] = useState('');
   const [clubId, setClubId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
+  const [datasetId, setDatasetId] = useState<string>('');
+  useEffect(() => { datasetRepository.list().then(setDatasets).catch(() => setDatasets([])); }, []);
+  const ds = datasets.find((d) => d.id === datasetId);
   const club = TEST_CLUBS.find((c) => c.id === clubId);
   const canStart = name.trim().length >= 1 && !!clubId && !busy;
 
   const start = async () => {
     if (!canStart || !clubId) return;
     setBusy(true);
-    await newGame(name.trim(), clubId);
+    await newGame(name.trim(), clubId, datasetId || null);
     navigate('/game');
   };
 
@@ -51,8 +57,20 @@ export function NewGamePage() {
       </section>
 
       <section className="panel mt-4 p-5">
+        <h2 className="panel-title">2. 선수 데이터</h2>
+        <div className="mt-2 flex flex-wrap items-center gap-3">
+          <select className="input w-auto" value={datasetId} onChange={(e) => setDatasetId(e.target.value)} aria-label="선수 데이터">
+            <option value="">기본 테스트 데이터 (가상 선수)</option>
+            {datasets.map((d) => <option key={d.id} value={d.id}>{d.name} · {d.playerCount}명</option>)}
+          </select>
+          <Link to="/import" className="text-sm text-gold-400 underline">CSV/JSON 가져오기</Link>
+        </div>
+        {ds && <p className="mt-2 text-xs text-slate-400">가져온 선수가 있는 구단({ds.clubIds.length}개)은 그 선수들로 구성되고, 인원이 22명보다 적으면 테스트 선수로 채웁니다. 나머지 구단은 테스트 선수를 씁니다. 아래 주전 평균은 테스트 데이터 기준입니다.</p>}
+      </section>
+
+      <section className="panel mt-4 p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <h2 className="panel-title">2. 구단 선택</h2>
+          <h2 className="panel-title">3. 구단 선택</h2>
           <TestDataBadge text="선수는 테스트용 가상 선수" />
         </div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
