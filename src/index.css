@@ -1,0 +1,47 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-navy-950 text-slate-100 antialiased;
+  font-family: 'Pretendard', 'Noto Sans KR', system-ui, sans-serif;
+}
+
+@layer components {
+  .panel {
+    @apply rounded-xl border border-navy-600/70 bg-navy-850;
+  }
+  .panel-title {
+    @apply text-xs font-semibold uppercase tracking-[0.14em] text-gold-400;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-lg px-3.5 py-2 text-sm font-semibold transition
+      focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-400 disabled:cursor-not-allowed disabled:opacity-40;
+  }
+  .btn-gold {
+    @apply btn bg-gold-500 text-navy-950 hover:bg-gold-400;
+  }
+  .btn-ghost {
+    @apply btn border border-navy-600 bg-navy-800 text-slate-200 hover:border-gold-500/60 hover:text-white;
+  }
+  .input {
+    @apply w-full rounded-lg border border-navy-600 bg-navy-900 px-3 py-2 text-sm text-white placeholder:text-slate-500
+      focus:border-gold-500 focus:outline-none focus:ring-1 focus:ring-gold-500;
+  }
+  .stat-num {
+    @apply font-bold tabular-nums text-white;
+  }
+  .table-base {
+    @apply w-full text-left text-sm;
+  }
+  .table-base th {
+    @apply border-b border-navy-600 px-3 py-2 text-xs font-semibold uppercase tracking-wide text-slate-400;
+  }
+  .table-base td {
+    @apply border-b border-navy-700/60 px-3 py-2;
+  }
+}

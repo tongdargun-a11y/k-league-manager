@@ -1,0 +1,314 @@
+import { create } from 'zustand';
+import type { ClockSpeed, Lineup, SaveSummary, Tactic, WorldState } from '../types';
+import {
+  advanceDay, applyMatchResult, checkSeasonEnd, createNewWorld, fixtureFor, prepareMatch, simulateDueAIFixtures,
+} from '../engine/world';
+import {
+  autoReplaceInjured, canSubstitute, changeTactic, simulateToEnd, stepMinute, substitute, type MatchState, type SideKey,
+} from '../engine/match/engine';
+import { validateLineup } from '../engine/match/lineup';
+import { saveRepository, prefs } from '../repositories/saveRepository';
+
+export type LiveSpeed = 'slow' | 'normal' | 'fast';
+
+interface Toast {
+  id: number;
+  text: string;
+  tone: 'info' | 'success' | 'warn' | 'error';
+}
+
+interface GameStore {
+  world: WorldState | null;
+  saveId: string | null;
+  saveName: string;
+  saveCreatedAt: string | null;
+  clockSpeed: ClockSpeed;
+  saving: boolean;
+  lastSavedAt: string | null;
+  saves: SaveSummary[];
+  toasts: Toast[];
+  daysSinceSave: number;
+
+  live: MatchState | null;
+  liveRunning: boolean;
+  liveSpeed: LiveSpeed;
+
+  // 세이브
+  refreshSaves(): Promise<void>;
+  newGame(managerName: string, clubId: string): Promise<void>;
+  loadGame(id: string): Promise<boolean>;
+  saveGame(opts?: { silent?: boolean; name?: string }): Promise<void>;
+  deleteSave(id: string): Promise<void>;
+  exitToTitle(): void;
+
+  // 시간
+  setClockSpeed(speed: ClockSpeed): void;
+  advanceOneDay(): void;
+
+  // 팀 관리
+  setLineup(lineup: Lineup): void;
+  setTactic(tactic: Tactic): void;
+
+  // 경기
+  startMatch(): { ok: boolean; reason?: string };
+  matchStep(): void;
+  setLiveRunning(running: boolean): void;
+  setLiveSpeed(speed: LiveSpeed): void;
+  matchSubstitute(outId: string, inId: string): { ok: boolean; reason?: string };
+  matchChangeTactic(tactic: Tactic): void;
+  simulateRest(): void;
+  finishMatch(): void;
+
+  toast(text: string, tone?: Toast['tone']): void;
+  dismissToast(id: number): void;
+}
+
+let saveChain: Promise<unknown> = Promise.resolve();
+let toastSeq = 0;
+const AUTOSAVE_EVERY_DAYS = 7;
+
+export const useGame = create<GameStore>((set, get) => ({
+  world: null,
+  saveId: null,
+  saveName: '',
+  saveCreatedAt: null,
+  clockSpeed: 'paused',
+  saving: false,
+  lastSavedAt: null,
+  saves: [],
+  toasts: [],
+  daysSinceSave: 0,
+  live: null,
+  liveRunning: false,
+  liveSpeed: 'normal',
+
+  async refreshSaves() {
+    try {
+      set({ saves: await saveRepository.list() });
+    } catch (e) {
+      get().toast(`세이브 목록을 불러오지 못했습니다: ${(e as Error).message}`, 'error');
+    }
+  },
+
+  async newGame(managerName, clubId) {
+    const world = createNewWorld({ managerName, clubId });
+    set({ world, saveId: null, saveName: '', saveCreatedAt: null, clockSpeed: 'paused', live: null, liveRunning: false, daysSinceSave: 0 });
+    await get().saveGame({ silent: true });
+  },
+
+  async loadGame(id) {
+    try {
+      const save = await saveRepository.load(id);
+      if (!save) {
+        get().toast('세이브를 찾을 수 없습니다.', 'error');
+        return false;
+      }
+      set({
+        world: save.world,
+        saveId: save.id,
+        saveName: save.name,
+        saveCreatedAt: save.createdAt,
+        lastSavedAt: save.updatedAt,
+        clockSpeed: 'paused',
+        live: save.world.liveMatch,
+        liveRunning: false,
+        daysSinceSave: 0,
+      });
+      prefs.setLastSaveId(save.id);
+      return true;
+    } catch (e) {
+      get().toast(`불러오기 실패: ${(e as Error).message}`, 'error');
+      return false;
+    }
+  },
+
+  saveGame(opts = {}) {
+    // 저장 요청을 순서대로 처리 (동시 쓰기 방지)
+    const run = async () => {
+      const { world, saveId, saveName, saveCreatedAt } = get();
+      if (!world) return;
+      set({ saving: true });
+      try {
+        const save = await saveRepository.write({
+          id: saveId ?? undefined,
+          name: opts.name ?? saveName,
+          world,
+          createdAt: saveCreatedAt ?? undefined,
+        });
+        set({ saveId: save.id, saveName: save.name, saveCreatedAt: save.createdAt, lastSavedAt: save.updatedAt, daysSinceSave: 0 });
+        prefs.setLastSaveId(save.id);
+        if (!opts.silent) get().toast('저장했습니다.', 'success');
+      } catch (e) {
+        get().toast(`저장 실패: ${(e as Error).message}`, 'error');
+      } finally {
+        set({ saving: false });
+      }
+    };
+    const p = saveChain.then(run, run);
+    saveChain = p;
+    return p;
+  },
+
+  async deleteSave(id) {
+    await saveRepository.remove(id);
+    if (prefs.getLastSaveId() === id) prefs.setLastSaveId(null);
+    await get().refreshSaves();
+  },
+
+  exitToTitle() {
+    set({ world: null, saveId: null, clockSpeed: 'paused', live: null, liveRunning: false });
+  },
+
+  setClockSpeed(speed) {
+    const { world } = get();
+    if (!world) return;
+    if (speed !== 'paused') {
+      const today = fixtureFor(world, world.clock.gameDate, world.userClubId);
+      if (today && today.status !== 'played') {
+        get().toast('오늘은 경기일입니다. 경기를 먼저 진행하세요.', 'warn');
+        set({ clockSpeed: 'paused' });
+        return;
+      }
+      if (world.season.status === 'finished') {
+        get().toast('시즌이 종료되었습니다.', 'info');
+        return;
+      }
+    }
+    const wasRunning = get().clockSpeed !== 'paused';
+    set({ clockSpeed: speed });
+    if (speed === 'paused' && wasRunning && get().daysSinceSave > 0) void get().saveGame({ silent: true });
+  },
+
+  advanceOneDay() {
+    const { world } = get();
+    if (!world) return;
+    const r = advanceDay(world);
+    if (!r.advanced) {
+      set({ clockSpeed: 'paused' });
+      if (r.stopReason === 'match-day') get().toast('오늘은 경기일입니다. 경기를 시작하세요.', 'warn');
+      return;
+    }
+    const days = get().daysSinceSave + 1;
+    set({ world: r.world, daysSinceSave: days });
+    if (r.stopReason) {
+      set({ clockSpeed: 'paused' });
+      if (r.stopReason === 'match-day') get().toast('경기일입니다! 대시보드에서 경기를 시작하세요.', 'info');
+      if (r.stopReason === 'season-end') get().toast('시즌이 종료되었습니다.', 'success');
+      if (r.stopReason === 'injury-return') get().toast('부상 선수가 복귀했습니다.', 'info');
+      void get().saveGame({ silent: true });
+    } else if (days >= AUTOSAVE_EVERY_DAYS) {
+      void get().saveGame({ silent: true });
+    }
+  },
+
+  setLineup(lineup) {
+    const { world } = get();
+    if (!world) return;
+    set({ world: { ...world, userLineup: lineup, tactics: { ...world.tactics, [world.userClubId]: { ...world.tactics[world.userClubId], formation: lineup.formation } } } });
+  },
+
+  setTactic(tactic) {
+    const { world } = get();
+    if (!world) return;
+    set({ world: { ...world, tactics: { ...world.tactics, [world.userClubId]: tactic }, userLineup: { ...world.userLineup, formation: tactic.formation } } });
+  },
+
+  startMatch() {
+    const { world, live } = get();
+    if (!world) return { ok: false, reason: '게임이 없습니다.' };
+    if (live && live.phase !== 'finished') return { ok: true };
+    const fixture = fixtureFor(world, world.clock.gameDate, world.userClubId);
+    if (!fixture || fixture.status === 'played') return { ok: false, reason: '오늘은 경기가 없습니다.' };
+    const issues = validateLineup(world.userLineup, world.players, world.competition.format.benchSize).filter((i) => i.level === 'error');
+    if (issues.length) return { ok: false, reason: issues[0].message };
+    const state = prepareMatch(world, fixture);
+    set({ live: state, liveRunning: false, clockSpeed: 'paused', world: { ...world, liveMatch: state } });
+    void get().saveGame({ silent: true });
+    return { ok: true };
+  },
+
+  matchStep() {
+    const { live, world } = get();
+    if (!live || !world || live.phase === 'finished') return;
+    const prevPhase = live.phase;
+    const next = stepMinute(live, world.players);
+    const patch: Partial<GameStore> = { live: next };
+    if (next.attentionRequired) {
+      patch.liveRunning = false;
+      get().toast(next.attentionRequired, 'warn');
+    }
+    if (next.phase === 'halftime' && prevPhase !== 'halftime') {
+      patch.liveRunning = false;
+      patch.world = { ...world, liveMatch: next };
+      set(patch);
+      void get().saveGame({ silent: true });
+      return;
+    }
+    if (next.phase === 'finished') patch.liveRunning = false;
+    set(patch);
+  },
+
+  setLiveRunning(running) {
+    const { live } = get();
+    if (!live || live.phase === 'finished') return set({ liveRunning: false });
+    set({ liveRunning: running });
+  },
+
+  setLiveSpeed(speed) {
+    set({ liveSpeed: speed });
+  },
+
+  matchSubstitute(outId, inId) {
+    const { live, world } = get();
+    if (!live || !world) return { ok: false, reason: '진행 중인 경기가 없습니다.' };
+    const side: SideKey = live.home.isUser ? 'home' : 'away';
+    const check = canSubstitute(live, side, outId, inId);
+    if (!check.ok) return check;
+    set({ live: substitute(live, side, outId, inId, world.players) });
+    return { ok: true };
+  },
+
+  matchChangeTactic(tactic) {
+    const { live, world } = get();
+    if (!live || !world) return;
+    const side: SideKey = live.home.isUser ? 'home' : 'away';
+    set({ live: changeTactic(live, side, tactic, world.players) });
+  },
+
+  simulateRest() {
+    const { live, world } = get();
+    if (!live || !world) return;
+    const side: SideKey = live.home.isUser ? 'home' : 'away';
+    let s = autoReplaceInjured(live, side, world.players);
+    s = simulateToEnd(structuredClone(s), world.players, { assistUser: true });
+    set({ live: s, liveRunning: false });
+  },
+
+  finishMatch() {
+    const { live, world } = get();
+    if (!live || !world || live.phase !== 'finished') return;
+    let w = applyMatchResult(world, live);
+    w = simulateDueAIFixtures(w, w.clock.gameDate);
+    w = checkSeasonEnd(w);
+    w = { ...w, liveMatch: null };
+    set({ world: w, live: null, liveRunning: false });
+    void get().saveGame({ silent: true });
+  },
+
+  toast(text, tone = 'info') {
+    const id = ++toastSeq;
+    set({ toasts: [...get().toasts, { id, text, tone }].slice(-4) });
+    setTimeout(() => get().dismissToast(id), 4500);
+  },
+
+  dismissToast(id) {
+    set({ toasts: get().toasts.filter((t) => t.id !== id) });
+  },
+}));
+
+/** 사용자 구단 기준 편의 셀렉터 */
+export function useWorld(): WorldState {
+  const world = useGame((s) => s.world);
+  if (!world) throw new Error('게임이 로드되지 않았습니다.');
+  return world;
+}

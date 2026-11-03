@@ -1,0 +1,18 @@
+{
+  "_notice": "테스트 데이터입니다. 구단명·연고지·홈구장은 공개된 일반 정보를 바탕으로 한 개발용 값이며, 공식 라이선스 데이터가 아닙니다. 엠블럼은 포함하지 않습니다. 능력·평판·재정 수치는 게임용 추정치입니다.",
+  "sourceUpdatedAt": "2026-11-03",
+  "clubs": [
+    { "id": "ulsan", "name": "울산 HD FC", "shortName": "울산", "city": "울산", "stadium": "울산문수축구경기장", "founded": 1983, "reputation": 84, "colors": { "primary": "#1d4ed8", "secondary": "#facc15" } },
+    { "id": "jeonbuk", "name": "전북 현대 모터스", "shortName": "전북", "city": "전주", "stadium": "전주월드컵경기장", "founded": 1994, "reputation": 85, "colors": { "primary": "#15803d", "secondary": "#facc15" } },
+    { "id": "pohang", "name": "포항 스틸러스", "shortName": "포항", "city": "포항", "stadium": "포항스틸야드", "founded": 1973, "reputation": 79, "colors": { "primary": "#b91c1c", "secondary": "#111827" } },
+    { "id": "seoul", "name": "FC 서울", "shortName": "서울", "city": "서울", "stadium": "서울월드컵경기장", "founded": 1983, "reputation": 80, "colors": { "primary": "#dc2626", "secondary": "#0f172a" } },
+    { "id": "jeju", "name": "제주 SK FC", "shortName": "제주", "city": "제주", "stadium": "제주월드컵경기장", "founded": 1982, "reputation": 73, "colors": { "primary": "#ea580c", "secondary": "#1f2937" } },
+    { "id": "daejeon", "name": "대전 하나 시티즌", "shortName": "대전", "city": "대전", "stadium": "대전월드컵경기장", "founded": 1997, "reputation": 76, "colors": { "primary": "#6d28d9", "secondary": "#16a34a" } },
+    { "id": "gangwon", "name": "강원 FC", "shortName": "강원", "city": "강원", "stadium": "춘천송암스포츠타운", "founded": 2008, "reputation": 72, "colors": { "primary": "#f97316", "secondary": "#1e3a8a" } },
+    { "id": "gwangju", "name": "광주 FC", "shortName": "광주", "city": "광주", "stadium": "광주축구전용경기장", "founded": 2010, "reputation": 71, "colors": { "primary": "#eab308", "secondary": "#b91c1c" } },
+    { "id": "suwonfc", "name": "수원 FC", "shortName": "수원FC", "city": "수원", "stadium": "수원종합운동장", "founded": 2003, "reputation": 70, "colors": { "primary": "#1e40af", "secondary": "#dc2626" } },
+    { "id": "gimcheon", "name": "김천 상무 FC", "shortName": "김천", "city": "김천", "stadium": "김천종합운동장", "founded": 2021, "reputation": 74, "colors": { "primary": "#be123c", "secondary": "#1e293b" } },
+    { "id": "anyang", "name": "FC 안양", "shortName": "안양", "city": "안양", "stadium": "안양종합운동장", "founded": 2013, "reputation": 68, "colors": { "primary": "#7c3aed", "secondary": "#e5e7eb" } },
+    { "id": "daegu", "name": "대구 FC", "shortName": "대구", "city": "대구", "stadium": "대구iM뱅크PARK", "founded": 2002, "reputation": 69, "colors": { "primary": "#0ea5e9", "secondary": "#0f172a" } }
+  ]
+}
