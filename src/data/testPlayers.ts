@@ -78,10 +78,29 @@ export function koreanName(rng: Rng): string {
   return rng.pick(SURNAMES) + rng.pick(GIVEN_A) + rng.pick(GIVEN_B);
 }
 
+/** 가상 외국인 선수 이름의 한글 표기 */
+export const KO_NAME: Record<string, string> = {
+  Tiago: '치아구', Rafael: '하파엘', Lucas: '루카스', Matheus: '마테우스', Bruno: '브루누', Gustavo: '구스타부', Caio: '카이우', Diego: '디에구',
+  Silvano: '시우바누', Moreira: '모레이라', Teixeira: '테이셰이라', Barreto: '바헤투', Cardoso: '카르도주', Ramalho: '하말류', Fontes: '폰치스', Pires: '피리스',
+  Haruto: '하루토', Sota: '소타', Ren: '렌', Kaito: '가이토', Yuto: '유토', Riku: '리쿠',
+  Morikawa: '모리카와', Takeda: '다케다', Hirano: '히라노', Sakamoto: '사카모토', Kimura: '기무라', Ishida: '이시다',
+  Liam: '리암', Jack: '잭', Noah: '노아', Cooper: '쿠퍼', Mason: '메이슨',
+  Hartley: '하틀리', Brennan: '브레넌', Walsh: '월시', Kerr: '커', Doyle: '도일',
+  Nikola: '니콜라', Stefan: '스테판', Marko: '마르코', Luka: '루카',
+  Petrovac: '페트로바츠', Ilijev: '일리예프', Markoski: '마르코스키', Jankov: '얀코프',
+  'Andrés': '안드레스', Camilo: '카밀로', 'Julián': '훌리안', 'Sebastián': '세바스티안',
+  Ospino: '오스피노', Restrepa: '레스트레파', Villamar: '비야마르', Quintero: '킨테로',
+};
+
+/** 영문 이름 → 한글 표기 (모르는 단어는 그대로) */
+export function koreanizeName(en: string): string {
+  return en.split(' ').map((w) => KO_NAME[w] ?? w).join(' ');
+}
+
 function foreignName(rng: Rng): { name: string; nameEn: string; nationality: string } {
   const f = rng.pick(FOREIGN);
   const en = rng.pick(f.first) + ' ' + rng.pick(f.last);
-  return { name: en, nameEn: en, nationality: f.nationality };
+  return { name: koreanizeName(en), nameEn: en, nationality: f.nationality };
 }
 
 export function generateTestSquad(club: Club, seasonStart: string): Player[] {

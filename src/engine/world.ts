@@ -25,7 +25,7 @@ import { DEFAULT_TRAINING, INTENSITY_INJURY, INTENSITY_RECOVERY, planFor, proces
 import { createRng } from '../utils/rng';
 import { weekday } from '../utils/date';
 
-export const WORLD_SCHEMA_VERSION = 3;
+export const WORLD_SCHEMA_VERSION = 4;
 
 // ───────────────────────── 새 게임 ─────────────────────────
 
