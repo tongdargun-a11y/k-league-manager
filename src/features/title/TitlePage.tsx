@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileUp, FolderOpen, Play, Plus, Trash2 } from 'lucide-react';
+import { FileUp, FolderOpen, ImagePlus, Play, Plus, Trash2 } from 'lucide-react';
 import { useGame } from '../../store/gameStore';
 import { prefs } from '../../repositories/saveRepository';
 import { TEST_CLUBS, DATA_NOTICE } from '../../data';
@@ -43,6 +43,9 @@ export function TitlePage() {
           </button>
           <button className="btn-ghost w-full" onClick={() => navigate('/import')}>
             <FileUp size={16} /> 선수 데이터 가져오기 (CSV/JSON)
+          </button>
+          <button className="btn-ghost w-full" onClick={() => navigate('/images')}>
+            <ImagePlus size={16} /> 개인용 로고·사진
           </button>
         </div>
 

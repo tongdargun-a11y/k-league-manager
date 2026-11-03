@@ -14,6 +14,7 @@ import { TransfersPage } from './features/transfers/TransfersPage';
 import { FinancePage } from './features/finance/FinancePage';
 import { TrainingPage } from './features/training/TrainingPage';
 import { ImportPage } from './features/import/ImportPage';
+import { LocalImagesPage } from './features/images/LocalImagesPage';
 import { Toasts } from './components/Toasts';
 import { ErrorBoundary } from './components/ErrorBoundary';
 
@@ -25,6 +26,7 @@ export default function App() {
           <Route path="/" element={<TitlePage />} />
           <Route path="/new" element={<NewGamePage />} />
           <Route path="/import" element={<ImportPage />} />
+          <Route path="/images" element={<LocalImagesPage />} />
           <Route path="/game" element={<AppLayout />}>
             <Route index element={<DashboardPage />} />
             <Route path="squad" element={<SquadPage />} />

@@ -15,6 +15,7 @@ class SaveDB extends Dexie {
   saves!: Table<SaveGame, string>;
   summaries!: Table<SaveSummary, string>;
   datasets!: Table<PlayerDataset, string>;
+  images!: Table<LocalImage, string>;
   constructor() {
     super('k-league-manager');
     this.version(1).stores({
@@ -27,10 +28,31 @@ class SaveDB extends Dexie {
       summaries: 'id, updatedAt',
       datasets: 'id, importedAt',
     });
+    // v3: 사용자가 직접 추가한 개인용 이미지 (이 브라우저에만 저장, 배포 빌드에 포함되지 않음)
+    this.version(3).stores({
+      saves: 'id, updatedAt',
+      summaries: 'id, updatedAt',
+      datasets: 'id, importedAt',
+      images: 'key',
+    });
   }
 }
 
+/** key: `club:<clubId>` 또는 `player:<playerId>` */
+export interface LocalImage {
+  key: string;
+  blob: Blob;
+  updatedAt: string;
+}
+
 const db = new SaveDB();
+
+export const imageRepository = {
+  all: () => db.images.toArray(),
+  put: (key: string, blob: Blob) => db.images.put({ key, blob, updatedAt: new Date().toISOString() }),
+  remove: (key: string) => db.images.delete(key),
+  clear: () => db.images.clear(),
+};
 
 function toSummary(save: SaveGame): SaveSummary {
   const { world: _world, ...rest } = save;
