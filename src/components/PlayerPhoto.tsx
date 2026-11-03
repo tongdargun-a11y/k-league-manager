@@ -11,7 +11,7 @@ import { playerImageKey, useLocalImage } from '../store/localImages';
 export function PlayerPhoto({ player, className = '' }: { player: Player; className?: string }) {
   const [failed, setFailed] = useState(false);
   const local = useLocalImage(playerImageKey(player.id));
-  const verifiedPath = player.photoAssetId && player.meta.licenseStatus === 'verified' ? `/assets/players/${player.photoAssetId}` : null;
+  const verifiedPath = player.photoAssetId && player.meta.licenseStatus === 'verified' ? `${import.meta.env.BASE_URL}assets/players/${player.photoAssetId}` : null;
   if (verifiedPath && !failed) {
     return <img src={verifiedPath} alt={player.name} className={`object-cover ${className}`} onError={() => setFailed(true)} />;
   }
