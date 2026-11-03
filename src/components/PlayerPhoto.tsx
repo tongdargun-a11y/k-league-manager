@@ -1,18 +1,21 @@
 import { useState } from 'react';
 import type { Player } from '../types';
 import { positionGroup } from '../engine/ratings/ovr';
+import { playerImageKey, useLocalImage } from '../store/localImages';
 
 /**
  * 선수 사진.
- * 우선순위: 권리 확인된 사진 → (향후) 사용자가 로컬에서 추가한 개인용 사진 → 기본 실루엣.
- * 현재는 권리 확인된 사진 에셋이 없으므로 항상 실루엣을 표시한다. 외부 이미지 핫링크는 하지 않는다.
+ * 우선순위: 권리 확인된 사진 → 사용자가 이 브라우저에 직접 추가한 개인용 사진 → 기본 실루엣.
+ * 외부 이미지 핫링크는 하지 않는다.
  */
 export function PlayerPhoto({ player, className = '' }: { player: Player; className?: string }) {
   const [failed, setFailed] = useState(false);
+  const local = useLocalImage(playerImageKey(player.id));
   const verifiedPath = player.photoAssetId && player.meta.licenseStatus === 'verified' ? `/assets/players/${player.photoAssetId}` : null;
   if (verifiedPath && !failed) {
     return <img src={verifiedPath} alt={player.name} className={`object-cover ${className}`} onError={() => setFailed(true)} />;
   }
+  if (local) return <img src={local} alt={player.name} className={`object-cover ${className}`} />;
   return <Silhouette group={positionGroup(player.positions[0])} className={className} label={player.name} />;
 }
 
