@@ -158,14 +158,15 @@ describe('훈련·성장', () => {
 });
 
 describe('세이브 마이그레이션', () => {
-  it('v1 세이브를 v2로 변환한다', () => {
+  it('v1 세이브를 최신 버전으로 변환한다', () => {
     const w = createNewWorld({ managerName: 'T', clubId: 'daegu', seed: 1 });
     const { finance: _f, transfers: _t, incomingOffers: _o, training: _tr, trainingReports: _r, ...v1world } = w;
     void _f; void _t; void _o; void _tr; void _r;
     const v1 = { id: 's', schemaVersion: 1, name: 'n', createdAt: '', updatedAt: '', gameDate: w.clock.gameDate, managerName: 'T', selectedClubId: 'daegu',
       world: { ...v1world, seasonStats: { 'kleague1-2026:daegu-p01': { playerId: 'daegu-p01', seasonId: 'kleague1-2026', clubId: 'daegu', appearances: 1, starts: 1, minutes: 90, goals: 1, assists: 0, yellowCards: 0, redCards: 0, ratingSum: 7, ratingCount: 1, cleanSheets: 0 } } } } as never;
     const v2 = migrateSave(v1);
-    expect(v2.schemaVersion).toBe(2);
+    expect(v2.schemaVersion).toBe(3);
+    expect(v2.world.history).toEqual([]);
     expect(v2.world.finance.ledger).toEqual([]);
     expect(v2.world.training.daegu.focus).toBe('balanced');
     expect(Object.keys(v2.world.seasonStats)).toEqual(['kleague1-2026:daegu-p01:daegu']);
