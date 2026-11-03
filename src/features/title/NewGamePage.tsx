@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { datasetRepository, type DatasetSummary } from '../../repositories/saveRepository';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
@@ -29,10 +29,11 @@ export function NewGamePage() {
   const navigate = useNavigate();
   const newGame = useGame((s) => s.newGame);
   const [name, setName] = useState('');
-  const [clubId, setClubId] = useState<string | null>(null);
+  const [params] = useSearchParams();
+  const [clubId, setClubId] = useState<string | null>(params.get('club'));
   const [busy, setBusy] = useState(false);
   const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
-  const [datasetId, setDatasetId] = useState<string>('');
+  const [datasetId, setDatasetId] = useState<string>(params.get('ds') ?? '');
   useEffect(() => { datasetRepository.list().then(setDatasets).catch(() => setDatasets([])); }, []);
   const ds = datasets.find((d) => d.id === datasetId);
   const club = TEST_CLUBS.find((c) => c.id === clubId);

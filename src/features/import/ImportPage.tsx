@@ -50,12 +50,10 @@ export function ImportPage() {
 
   const save = async () => {
     if (!result || !result.players.length) return;
-    await datasetRepository.add({ name: name || fileName, fileName, players: result.players });
-    toast(`데이터셋 '${name || fileName}' 저장 완료 (${result.players.length}명). 새 게임에서 선택할 수 있습니다.`, 'success');
-    setResult(null);
-    setFileName('');
-    setConfirmed(false);
-    void refresh();
+    const ds = await datasetRepository.add({ name: name || fileName, fileName, players: result.players });
+    toast(`데이터셋 '${name || fileName}' 저장 완료 (${result.players.length}명). 이 데이터로 새 게임을 시작하세요. (진행 중인 세이브에는 적용되지 않습니다)`, 'success');
+    const clubs = Object.keys(result.perClub);
+    navigate(`/new?ds=${ds.id}${clubs.length === 1 ? `&club=${clubs[0]}` : ''}`);
   };
 
   const downloadErrors = () => {

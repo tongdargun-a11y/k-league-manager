@@ -2,6 +2,7 @@ import type { SaveGame } from '../types';
 import { WORLD_SCHEMA_VERSION } from '../engine/world';
 import { TEST_FORMAT } from '../data';
 import { DEFAULT_TRAINING } from '../engine/training/training';
+import { koreanizeName } from '../data/testPlayers';
 
 /**
  * 세이브 데이터 마이그레이션.
@@ -32,6 +33,15 @@ const MIGRATIONS: Record<number, (save: SaveGame) => SaveGame> = {
   },
   // v2 → v3: 시즌 결산 기록
   2: (save) => ({ ...save, schemaVersion: 3, world: { ...save.world, history: save.world.history ?? [] } }),
+  // v3 → v4: 가상 외국인 선수 이름 한글 표기
+  3: (save) => ({
+    ...save,
+    schemaVersion: 4,
+    world: {
+      ...save.world,
+      players: Object.fromEntries(Object.entries(save.world.players).map(([id, p]) => [id, p.meta.sourceType === 'test' && p.nameEn && p.name === p.nameEn ? { ...p, name: koreanizeName(p.nameEn) } : p])),
+    },
+  }),
 };
 
 export class SaveVersionError extends Error {}
