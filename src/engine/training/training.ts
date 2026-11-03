@@ -3,7 +3,7 @@
  * 30세 이후에는 피지컬 능력치가 천천히 감소한다. 난수는 날짜·선수 id로 시드를 고정해 재현 가능.
  */
 import type { AttributeKey, GameDate, Player, TrainingFocus, TrainingIntensity, TrainingPlan, TrainingReport, TrainingReportEntry, WorldState } from '../../types';
-import { FREE_AGENT } from '../../types';
+import { FREE_AGENT, RETIRED } from '../../types';
 import { ATTRIBUTE_GROUPS, POSITION_WEIGHTS, clamp, playerOvr } from '../ratings/ovr';
 import { ageOn } from '../../utils/date';
 import { createRng, hashString } from '../../utils/rng';
@@ -103,7 +103,7 @@ export function processWeeklyTraining(world: WorldState, date: GameDate): WorldS
   const players = { ...world.players };
   const entries: TrainingReportEntry[] = [];
   for (const p of Object.values(world.players)) {
-    if (p.clubId === FREE_AGENT || p.status.injuryId) continue;
+    if (p.clubId === FREE_AGENT || p.clubId === RETIRED || p.status.injuryId) continue;
     const plan = planFor(world, p.clubId);
     const { player, entry } = trainPlayer(p, plan, date, recent.get(p.id) ?? 0);
     players[p.id] = player;

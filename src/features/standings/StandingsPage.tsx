@@ -61,6 +61,27 @@ export function StandingsPage() {
           </Panel>
         ))}
       </div>
+
+      {(world.history ?? []).length > 0 && (
+        <Panel title="역대 기록">
+          <div className="overflow-x-auto">
+            <table className="table-base">
+              <thead><tr><th>시즌</th><th>우승</th><th>우리 팀</th><th>득점왕</th><th>도움왕</th></tr></thead>
+              <tbody>
+                {[...world.history].reverse().map((h) => (
+                  <tr key={h.seasonId}>
+                    <td className="text-white">{h.label}</td>
+                    <td><span className="flex items-center gap-1.5"><ClubBadge club={world.clubs[h.championId]} size={18} />{world.clubs[h.championId]?.shortName ?? h.championId}</span></td>
+                    <td>{world.clubs[h.userClubId]?.shortName} {h.userRank}위</td>
+                    <td className="text-xs">{h.topScorer ? `${h.topScorer.name} ${h.topScorer.value}골` : '-'}</td>
+                    <td className="text-xs">{h.topAssister ? `${h.topAssister.name} ${h.topAssister.value}도움` : '-'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Panel>
+      )}
     </div>
   );
 }

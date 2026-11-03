@@ -18,14 +18,14 @@ import { hashString } from '../utils/rng';
 import { addInbox } from './inbox';
 export { addInbox } from './inbox';
 import { clamp, playerOvr, positionGroup } from './ratings/ovr';
-import { FREE_AGENT } from '../types';
+import { FREE_AGENT, RETIRED } from '../types';
 import { TICKET_PRICE, estimateAttendance, prizeMoney, processMonthly, recordTx, weeklyWageBill } from './finance/finance';
 import { processContracts, processTransferDay } from './transfers/transfers';
 import { DEFAULT_TRAINING, INTENSITY_INJURY, INTENSITY_RECOVERY, planFor, processWeeklyTraining } from './training/training';
 import { createRng } from '../utils/rng';
 import { weekday } from '../utils/date';
 
-export const WORLD_SCHEMA_VERSION = 2;
+export const WORLD_SCHEMA_VERSION = 3;
 
 // ───────────────────────── 새 게임 ─────────────────────────
 
@@ -111,6 +111,7 @@ export function createNewWorld(params: { managerName: string; clubId: string; se
     incomingOffers: [],
     training: Object.fromEntries(clubs.map((c) => [c.id, { ...DEFAULT_TRAINING }])),
     trainingReports: [],
+    history: [],
   };
   const club = clubMap[params.clubId];
   return addInbox(world, {
@@ -475,7 +476,7 @@ function trainingInjuries(world: WorldState, date: string): WorldState {
   const rng = createRng(hashString(`${world.worldSeed}:train-injury:${date}`));
   let w = world;
   for (const p of Object.values(world.players)) {
-    if (p.clubId === FREE_AGENT || p.status.injuryId) continue;
+    if (p.clubId === FREE_AGENT || p.clubId === RETIRED || p.status.injuryId) continue;
     const plan = planFor(world, p.clubId);
     if ((p.trainingFocus ?? plan.focus) === 'rest') continue;
     if (!rng.chance(INTENSITY_INJURY[plan.intensity])) continue;
@@ -519,7 +520,7 @@ export function checkSeasonEnd(world: WorldState): WorldState {
   w = addInbox(w, {
     kind: 'season',
     title: `${world.season.label} 종료`,
-    body: `우승: ${world.clubs[champion!]?.name ?? '-'} · 우리 팀 최종 순위: ${userRank}위. 다음 시즌 진행은 이후 업데이트(PHASE 3)에서 지원됩니다.`,
+    body: `우승: ${world.clubs[champion!]?.name ?? '-'} · 우리 팀 최종 순위: ${userRank}위. 대시보드에서 '다음 시즌 시작'을 눌러 새 시즌을 준비하세요.`,
   });
   return w;
 }

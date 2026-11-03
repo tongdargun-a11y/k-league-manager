@@ -6,7 +6,7 @@ import { ATTRIBUTE_GROUPS, groupAverage, ovrForPosition, POSITION_LABEL } from '
 import { PlayerCard } from './PlayerCard';
 import { Bar, EmptyState, Panel } from '../../components/ui';
 import { TestDataBadge } from '../../components/TestDataBadge';
-import { POSITIONS, FREE_AGENT, type Club } from '../../types';
+import { POSITIONS, FREE_AGENT, RETIRED, type Club } from '../../types';
 import { NegotiationPanel, OwnPlayerPanel } from '../transfers/PlayerActions';
 import { LocalImageButton } from '../images/LocalImageButton';
 import { playerImageKey } from '../../store/localImages';
@@ -20,7 +20,7 @@ export function PlayerPage() {
   const navigate = useNavigate();
   const player = id ? world.players[id] : undefined;
   if (!player) return <EmptyState title="선수를 찾을 수 없습니다"><Link to="/game/squad" className="text-gold-400 underline">선수단으로</Link></EmptyState>;
-  const club = world.clubs[player.clubId] ?? FREE_AGENT_CLUB;
+  const club = world.clubs[player.clubId] ?? (player.clubId === RETIRED ? { ...FREE_AGENT_CLUB, id: RETIRED, name: '은퇴', shortName: '은퇴' } : FREE_AGENT_CLUB);
   const isMine = player.clubId === world.userClubId;
   const career = careerStats(world, player.id);
   const season = currentSeasonStats(world, player.id);
@@ -60,7 +60,7 @@ export function PlayerPage() {
             </div>
           </Panel>
 
-          {isMine ? <OwnPlayerPanel player={player} /> : <NegotiationPanel key={player.id} player={player} />}
+          {player.clubId === RETIRED ? null : isMine ? <OwnPlayerPanel player={player} /> : <NegotiationPanel key={player.id} player={player} />}
 
           <Panel title="이번 시즌">
             <div className="grid grid-cols-3 gap-3 text-center sm:grid-cols-6">

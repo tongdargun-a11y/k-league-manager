@@ -55,7 +55,7 @@ const ATTR_KEYS: (keyof PlayerAttributes)[] = [
   'decisions', 'composure', 'leadership', 'aggression', 'teamwork', 'reflexes', 'handling', 'gkPositioning',
 ];
 
-function makeAttributes(rng: Rng, pos: Position, base: number): PlayerAttributes {
+export function makeAttributes(rng: Rng, pos: Position, base: number): PlayerAttributes {
   const profile = PROFILE[pos];
   const attrs = {} as PlayerAttributes;
   for (const key of ATTR_KEYS) {
@@ -66,7 +66,7 @@ function makeAttributes(rng: Rng, pos: Position, base: number): PlayerAttributes
 }
 
 /** 목표 OVR에 맞도록 능력치 전체를 평행 이동 */
-function tuneToOvr(attrs: PlayerAttributes, pos: Position, target: number): PlayerAttributes {
+export function tuneToOvr(attrs: PlayerAttributes, pos: Position, target: number): PlayerAttributes {
   const current = ovrForPosition(attrs, pos);
   const delta = target - current;
   const tuned = { ...attrs };
@@ -74,7 +74,7 @@ function tuneToOvr(attrs: PlayerAttributes, pos: Position, target: number): Play
   return tuned;
 }
 
-function koreanName(rng: Rng): string {
+export function koreanName(rng: Rng): string {
   return rng.pick(SURNAMES) + rng.pick(GIVEN_A) + rng.pick(GIVEN_B);
 }
 

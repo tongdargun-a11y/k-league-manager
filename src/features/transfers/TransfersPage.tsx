@@ -8,7 +8,7 @@ import { playerOvr, positionGroup } from '../../engine/ratings/ovr';
 import { ageOn, formatShort } from '../../utils/date';
 import { ClubBadge } from '../../components/ClubBadge';
 import { OvrBadge, Panel, Segmented, Stat } from '../../components/ui';
-import { FREE_AGENT, type PositionGroup } from '../../types';
+import { FREE_AGENT, RETIRED, type PositionGroup } from '../../types';
 
 export function TransfersPage() {
   const world = useWorld();
@@ -28,7 +28,7 @@ export function TransfersPage() {
   const pending = world.incomingOffers.filter((o) => o.status === 'pending');
 
   const list = useMemo(() => Object.values(world.players)
-    .filter((p) => p.clubId !== world.userClubId)
+    .filter((p) => p.clubId !== world.userClubId && p.clubId !== RETIRED)
     .filter((p) => club === 'all' || p.clubId === club)
     .filter((p) => group === 'ALL' || positionGroup(p.positions[0]) === group)
     .filter((p) => !q || p.name.includes(q) || (p.nameEn ?? '').toLowerCase().includes(q.toLowerCase()))

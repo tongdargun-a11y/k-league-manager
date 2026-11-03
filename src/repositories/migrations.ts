@@ -30,6 +30,8 @@ const MIGRATIONS: Record<number, (save: SaveGame) => SaveGame> = {
       },
     };
   },
+  // v2 → v3: 시즌 결산 기록
+  2: (save) => ({ ...save, schemaVersion: 3, world: { ...save.world, history: save.world.history ?? [] } }),
 };
 
 export class SaveVersionError extends Error {}
