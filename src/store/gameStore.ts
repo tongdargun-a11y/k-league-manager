@@ -7,7 +7,7 @@ import {
   autoReplaceInjured, canSubstitute, changeTactic, simulateToEnd, stepMinute, substitute, type MatchState, type SideKey,
 } from '../engine/match/engine';
 import { validateLineup } from '../engine/match/lineup';
-import { saveRepository, prefs } from '../repositories/saveRepository';
+import { saveRepository, prefs, datasetRepository } from '../repositories/saveRepository';
 
 export type LiveSpeed = 'slow' | 'normal' | 'fast';
 
@@ -35,7 +35,9 @@ interface GameStore {
 
   // 세이브
   refreshSaves(): Promise<void>;
-  newGame(managerName: string, clubId: string): Promise<void>;
+  newGame(managerName: string, clubId: string, datasetId?: string | null): Promise<void>;
+  /** 엔진 함수로 월드를 갱신 (이적·재정·훈련 등 화면 조작용) */
+  mutate(fn: (w: WorldState) => WorldState): void;
   loadGame(id: string): Promise<boolean>;
   saveGame(opts?: { silent?: boolean; name?: string }): Promise<void>;
   deleteSave(id: string): Promise<void>;
@@ -90,10 +92,17 @@ export const useGame = create<GameStore>((set, get) => ({
     }
   },
 
-  async newGame(managerName, clubId) {
-    const world = createNewWorld({ managerName, clubId });
+  async newGame(managerName, clubId, datasetId) {
+    const ds = datasetId ? await datasetRepository.get(datasetId) : undefined;
+    const world = createNewWorld({ managerName, clubId, importedPlayers: ds?.players });
     set({ world, saveId: null, saveName: '', saveCreatedAt: null, clockSpeed: 'paused', live: null, liveRunning: false, daysSinceSave: 0 });
     await get().saveGame({ silent: true });
+  },
+
+  mutate(fn) {
+    const { world } = get();
+    if (!world) return;
+    set({ world: fn(world) });
   },
 
   async loadGame(id) {
@@ -195,6 +204,7 @@ export const useGame = create<GameStore>((set, get) => ({
       if (r.stopReason === 'match-day') get().toast('경기일입니다! 대시보드에서 경기를 시작하세요.', 'info');
       if (r.stopReason === 'season-end') get().toast('시즌이 종료되었습니다.', 'success');
       if (r.stopReason === 'injury-return') get().toast('부상 선수가 복귀했습니다.', 'info');
+      if (r.stopReason === 'transfer-offer') get().toast('우리 선수에게 이적 제안이 들어왔습니다. 이적시장에서 확인하세요.', 'info');
       void get().saveGame({ silent: true });
     } else if (days >= AUTOSAVE_EVERY_DAYS) {
       void get().saveGame({ silent: true });

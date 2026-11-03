@@ -1,12 +1,15 @@
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useWorld } from '../../store/gameStore';
-import { careerStats, seasonStatsKey } from '../../engine/world';
+import { careerStats, currentSeasonStats } from '../../engine/world';
 import { ATTRIBUTE_GROUPS, groupAverage, ovrForPosition, POSITION_LABEL } from '../../engine/ratings/ovr';
 import { PlayerCard } from './PlayerCard';
 import { Bar, EmptyState, Panel } from '../../components/ui';
 import { TestDataBadge } from '../../components/TestDataBadge';
-import { POSITIONS } from '../../types';
+import { POSITIONS, FREE_AGENT, type Club } from '../../types';
+import { NegotiationPanel, OwnPlayerPanel } from '../transfers/PlayerActions';
+
+const FREE_AGENT_CLUB: Club = { id: FREE_AGENT, name: '무소속', shortName: '무소속', city: '-', stadium: '-', reputation: 0, colors: { primary: '#334155', secondary: '#1e293b' }, crestAssetId: null, finances: { balance: 0, transferBudget: 0, wageBudget: 0 }, meta: { sourceType: 'test', source: '', sourceUpdatedAt: '', licenseStatus: 'none', createdAt: '', updatedAt: '' } };
 import { formatShort } from '../../utils/date';
 
 export function PlayerPage() {
@@ -15,9 +18,10 @@ export function PlayerPage() {
   const navigate = useNavigate();
   const player = id ? world.players[id] : undefined;
   if (!player) return <EmptyState title="선수를 찾을 수 없습니다"><Link to="/game/squad" className="text-gold-400 underline">선수단으로</Link></EmptyState>;
-  const club = world.clubs[player.clubId];
+  const club = world.clubs[player.clubId] ?? FREE_AGENT_CLUB;
+  const isMine = player.clubId === world.userClubId;
   const career = careerStats(world, player.id);
-  const season = world.seasonStats[seasonStatsKey(world.season.id, player.id)];
+  const season = currentSeasonStats(world, player.id);
   const injury = world.injuries.find((i) => i.id === player.status.injuryId);
   const isGK = player.positions[0] === 'GK';
   const topPositions = POSITIONS.map((pos) => ({ pos, ovr: ovrForPosition(player.attributes, pos) })).sort((a, b) => b.ovr - a.ovr).slice(0, 4);
@@ -32,10 +36,10 @@ export function PlayerPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <button className="btn-ghost" onClick={() => navigate(-1)}><ArrowLeft size={16} /> 뒤로</button>
-        <TestDataBadge text="가상 선수 · 게임용 추정 능력치" />
+        {player.meta.sourceType === 'test' ? <TestDataBadge text="가상 선수 · 게임용 추정 능력치" /> : <TestDataBadge text={`가져온 데이터 · 능력치 ${player.attributesSource === 'imported' ? '가져온 값' : '게임용 추정치'}`} />}
       </div>
       <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_1fr]">
-        <PlayerCard player={player} club={club} career={career} gameDate={world.clock.gameDate} seasonLabel={(sid) => (sid === world.season.id ? world.season.label : sid)} />
+        <PlayerCard player={player} club={club} career={career} gameDate={world.clock.gameDate} seasonLabel={(sid) => (sid === world.season.id ? world.season.label : sid)} clubName={(id) => world.clubs[id]?.shortName ?? '무소속'} />
         <div className="space-y-4">
           <Panel title="상태">
             <div className="grid grid-cols-2 gap-x-6 gap-y-3 sm:grid-cols-4">
@@ -50,6 +54,8 @@ export function PlayerPage() {
               <span className="rounded bg-navy-700 px-2 py-0.5 text-slate-300">계약 ~{player.contract.endDate} · 주급 {player.contract.wage.toLocaleString()}만 원(추정)</span>
             </div>
           </Panel>
+
+          {isMine ? <OwnPlayerPanel player={player} /> : <NegotiationPanel key={player.id} player={player} />}
 
           <Panel title="이번 시즌">
             <div className="grid grid-cols-3 gap-3 text-center sm:grid-cols-6">
@@ -90,7 +96,7 @@ export function PlayerPage() {
               {recentApps.length === 0 ? <p className="text-sm text-slate-500">기록 없음</p> : (
                 <ul className="space-y-1 text-sm">
                   {recentApps.map(({ f, ps }) => {
-                    const oppId = f.homeClubId === player.clubId ? f.awayClubId : f.homeClubId;
+                    const oppId = f.homeClubId === ps!.clubId ? f.awayClubId : f.homeClubId;
                     return (
                       <li key={f.id} className="flex items-center gap-2">
                         <span className="w-16 text-xs text-slate-400">{formatShort(f.date)}</span>

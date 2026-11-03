@@ -58,6 +58,14 @@ export function DashboardPage() {
         </div>
       )}
 
+      {world.incomingOffers.some((o) => o.status === 'pending') && (
+        <Link to="/game/transfers" className="panel flex items-center gap-3 border-sky-400/50 p-3 text-sm hover:bg-navy-800">
+          <span className="rounded bg-sky-500/20 px-2 py-0.5 text-xs font-bold text-sky-300">이적 제안</span>
+          <span className="flex-1">답변을 기다리는 이적 제안이 {world.incomingOffers.filter((o) => o.status === 'pending').length}건 있습니다.</span>
+          <span className="text-gold-400">확인 →</span>
+        </Link>
+      )}
+
       <div className="grid gap-4 md:grid-cols-4">
         <Panel className="md:col-span-1"><Stat label="게임 날짜" value={<span className="text-lg">{formatKorean(world.clock.gameDate)}</span>} sub={world.season.label} /></Panel>
         <Panel><Stat label="리그 순위" value={`${myRank}위`} sub={`${myRow.points}점 · ${myRow.won}승 ${myRow.drawn}무 ${myRow.lost}패`} /></Panel>

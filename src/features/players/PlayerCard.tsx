@@ -8,7 +8,7 @@ import { Award } from 'lucide-react';
  * 선수 프로필 카드 — 다크 네이비·골드 세로형 카드.
  * 게임 내 기록(이 세이브에서 쌓인 기록)과 실제 기록(외부 출처)을 분리해서 표시한다.
  */
-export function PlayerCard({ player, club, career, gameDate, seasonLabel }: { player: Player; club: Club; career: PlayerCareerStats; gameDate: string; seasonLabel: (seasonId: string) => string }) {
+export function PlayerCard({ player, club, career, gameDate, seasonLabel, clubName = (id) => id }: { player: Player; club: Club; career: PlayerCareerStats; gameDate: string; seasonLabel: (seasonId: string) => string; clubName?: (clubId: string) => string }) {
   const ovr = playerOvr(player);
   const foot = player.foot === 'left' ? '왼발' : player.foot === 'both' ? '양발' : '오른발';
   return (
@@ -92,7 +92,7 @@ export function PlayerCard({ player, club, career, gameDate, seasonLabel }: { pl
             <tbody>
               {career.seasons.map((s) => (
                 <tr key={s.seasonId} className="border-t border-navy-700/60">
-                  <td className="py-1">{seasonLabel(s.seasonId)}</td><td>{club.id === s.clubId ? club.shortName : s.clubId}</td>
+                  <td className="py-1">{seasonLabel(s.seasonId)}</td><td>{clubName(s.clubId)}</td>
                   <td className="text-right tabular-nums">{s.appearances}</td><td className="text-right tabular-nums">{s.goals}</td>
                   <td className="text-right tabular-nums">{s.assists}</td><td className="text-right tabular-nums">{s.ratingCount ? (s.ratingSum / s.ratingCount).toFixed(2) : '-'}</td>
                 </tr>

@@ -3,6 +3,7 @@ import type { SaveGame, SaveSummary, WorldState } from '../types';
 import { WORLD_SCHEMA_VERSION } from '../engine/world';
 import { migrateSave } from './migrations';
 import { uid } from '../utils/id';
+import type { PlayerDataset } from '../engine/import/importPlayers';
 
 /**
  * IndexedDB 세이브 저장소 (Dexie).
@@ -13,11 +14,18 @@ import { uid } from '../utils/id';
 class SaveDB extends Dexie {
   saves!: Table<SaveGame, string>;
   summaries!: Table<SaveSummary, string>;
+  datasets!: Table<PlayerDataset, string>;
   constructor() {
     super('k-league-manager');
     this.version(1).stores({
       saves: 'id, updatedAt',
       summaries: 'id, updatedAt',
+    });
+    // v2: 가져온 선수 데이터셋 (새 게임 생성용, 기존 세이브와 분리)
+    this.version(2).stores({
+      saves: 'id, updatedAt',
+      summaries: 'id, updatedAt',
+      datasets: 'id, importedAt',
     });
   }
 }
@@ -66,6 +74,26 @@ export const saveRepository = {
       await db.saves.delete(id);
       await db.summaries.delete(id);
     });
+  },
+};
+
+export type DatasetSummary = Omit<PlayerDataset, 'players'> & { playerCount: number; clubIds: string[] };
+
+export const datasetRepository = {
+  async list(): Promise<DatasetSummary[]> {
+    const all = await db.datasets.orderBy('importedAt').reverse().toArray();
+    return all.map(({ players, ...rest }) => ({ ...rest, playerCount: players.length, clubIds: [...new Set(players.map((p) => p.clubId))] }));
+  },
+  async get(id: string): Promise<PlayerDataset | undefined> {
+    return db.datasets.get(id);
+  },
+  async add(ds: Omit<PlayerDataset, 'id' | 'importedAt'>): Promise<PlayerDataset> {
+    const full: PlayerDataset = { ...ds, id: uid('ds'), importedAt: new Date().toISOString() };
+    await db.datasets.put(full);
+    return full;
+  },
+  async remove(id: string): Promise<void> {
+    await db.datasets.delete(id);
   },
 };
 

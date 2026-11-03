@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FolderOpen, Play, Plus, Trash2 } from 'lucide-react';
+import { FileUp, FolderOpen, Play, Plus, Trash2 } from 'lucide-react';
 import { useGame } from '../../store/gameStore';
 import { prefs } from '../../repositories/saveRepository';
 import { TEST_CLUBS, DATA_NOTICE } from '../../data';
@@ -40,6 +40,9 @@ export function TitlePage() {
           )}
           <button className={`${last ? 'btn-ghost' : 'btn-gold'} w-full py-3 text-base`} onClick={() => navigate('/new')}>
             <Plus size={18} /> 새 게임
+          </button>
+          <button className="btn-ghost w-full" onClick={() => navigate('/import')}>
+            <FileUp size={16} /> 선수 데이터 가져오기 (CSV/JSON)
           </button>
         </div>
 
