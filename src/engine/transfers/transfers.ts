@@ -3,7 +3,7 @@
  * 선수 가치·요구 연봉은 게임 밸런스용 추정치다.
  */
 import type { CompetitionFormat, GameDate, IncomingOffer, Player, Transfer, WorldState } from '../../types';
-import { FREE_AGENT } from '../../types';
+import { FREE_AGENT, RETIRED } from '../../types';
 import { playerOvr, positionGroup } from '../ratings/ovr';
 import { ageOn, addDays, diffDays } from '../../utils/date';
 import { createRng, hashString } from '../../utils/rng';
@@ -293,7 +293,7 @@ export function processTransferDay(world: WorldState, date: GameDate): WorldStat
 export function processContracts(world: WorldState, date: GameDate): WorldState {
   let w = world;
   for (const p of Object.values(world.players)) {
-    if (p.clubId === FREE_AGENT) continue;
+    if (p.clubId === FREE_AGENT || p.clubId === RETIRED) continue;
     if (p.contract.endDate < date) {
       w = executeTransfer(w, { playerId: p.id, toClubId: FREE_AGENT, fee: 0, wage: 0, years: 0, type: 'contract-expired' });
       if (p.clubId === world.userClubId) w = addInbox(w, { kind: 'info', title: `${p.name} 계약 만료`, body: `${p.name} 선수의 계약이 끝나 팀을 떠났습니다.` });

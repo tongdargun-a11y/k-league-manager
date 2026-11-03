@@ -138,6 +138,8 @@ export interface Player {
 
 /** 무소속 선수의 clubId */
 export const FREE_AGENT = 'free';
+/** 은퇴한 선수의 clubId */
+export const RETIRED = 'retired';
 
 export interface PlayerSeasonStats {
   playerId: string;
@@ -484,6 +486,19 @@ export interface WorldState {
   trainingReports: TrainingReport[];
   /** 진행 중인 사용자 경기 (킥오프·하프타임에 저장되어 새로고침 후 이어서 진행) */
   liveMatch: import('../engine/match/engine').MatchState | null;
+  /** 지난 시즌 결산 기록 (오래된 순) */
+  history: SeasonRecord[];
+}
+
+export interface SeasonRecord {
+  seasonId: string;
+  label: string;
+  championId: string;
+  userClubId: string;
+  userRank: number;
+  table: { clubId: string; rank: number; played: number; won: number; drawn: number; lost: number; goalsFor: number; goalsAgainst: number; points: number }[];
+  topScorer: { playerId: string; name: string; clubId: string; value: number } | null;
+  topAssister: { playerId: string; name: string; clubId: string; value: number } | null;
 }
 
 export interface SaveGame {

@@ -3,6 +3,7 @@ import { AlertTriangle, Bell, CalendarClock, HeartPulse, Swords, Trophy } from '
 import { useGame, useWorld } from '../../store/gameStore';
 import { fixtureFor, nextFixture, standingsOf } from '../../engine/world';
 import { validateLineup } from '../../engine/match/lineup';
+import { startNextSeason } from '../../engine/season/rollover';
 import { ClubBadge } from '../../components/ClubBadge';
 import { EmptyState, FormDots, Panel, Stat } from '../../components/ui';
 import { diffDays, formatKorean, formatShort } from '../../utils/date';
@@ -96,7 +97,16 @@ export function DashboardPage() {
               <div className="w-full text-center text-xs text-slate-400 sm:w-auto">{world.clubs[next.homeClubId].stadium}</div>
             </div>
           ) : (
-            <EmptyState title="남은 경기가 없습니다">시즌이 종료되었습니다.</EmptyState>
+            <EmptyState title="남은 경기가 없습니다">
+              시즌이 종료되었습니다.
+              {world.season.status === 'finished' && (
+                <button className="btn-gold mx-auto mt-3" onClick={() => {
+                  useGame.getState().mutate(startNextSeason);
+                  void useGame.getState().saveGame({ silent: true });
+                  toast('새 시즌을 시작했습니다. 받은 메시지에서 은퇴·유소년 소식을 확인하세요.', 'success');
+                }}>다음 시즌 시작</button>
+              )}
+            </EmptyState>
           )}
         </Panel>
 
