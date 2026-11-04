@@ -8,6 +8,7 @@ import { clamp, ovrForPosition, playerOvr } from '../ratings/ovr';
 import { ageOn } from '../../utils/date';
 import { createRng, hashString, type Rng } from '../../utils/rng';
 import { koreanName, makeAttributes, tuneToOvr } from '../../data/testPlayers';
+import { HOME_NATION } from '../../data';
 
 const PHYSICAL: (keyof PlayerAttributes)[] = ['pace', 'acceleration', 'stamina', 'strength', 'jumping'];
 const YOUTH_POSITIONS: Position[][] = [['ST'], ['CM', 'DM'], ['CB'], ['LW', 'LM'], ['RB', 'CB'], ['GK'], ['AM', 'CM'], ['RW', 'RM']];
@@ -76,7 +77,7 @@ function makeYouth(club: Club, rng: Rng, idx: number, year: number, usedNumbers:
   return {
     id: `${club.id}-y${year}-${idx + 1}`,
     name: koreanName(rng),
-    nationality: '대한민국',
+    nationality: HOME_NATION,
     birthDate: `${year - age}-${String(rng.int(1, 12)).padStart(2, '0')}-${String(rng.int(1, 28)).padStart(2, '0')}`,
     heightCm: pos === 'GK' || pos === 'CB' ? rng.int(182, 192) : rng.int(168, 185),
     weightKg: rng.int(60, 80),

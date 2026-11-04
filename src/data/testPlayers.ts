@@ -1,6 +1,7 @@
 import type { Club, Foot, Player, PlayerAttributes, Position } from '../types';
 import { createRng, hashString, type Rng } from '../utils/rng';
 import { clamp, ovrForPosition } from '../engine/ratings/ovr';
+import { HOME_NATION } from './index';
 
 /**
  * ⚠ 테스트용 가상 선수 생성기
@@ -14,11 +15,11 @@ const GIVEN_A = ['민', '서', '도', '준', '현', '지', '태', '우', '성', 
 const GIVEN_B = ['준', '호', '현', '우', '민', '혁', '훈', '빈', '원', '석', '범', '수', '규', '찬', '율', '결', '온', '환', '성', '진', '오', '겸', '윤', '태', '헌'];
 
 const FOREIGN: { nationality: string; first: string[]; last: string[] }[] = [
-  { nationality: '브라질', first: ['Tiago', 'Rafael', 'Lucas', 'Matheus', 'Bruno', 'Gustavo', 'Caio', 'Diego'], last: ['Silvano', 'Moreira', 'Teixeira', 'Barreto', 'Cardoso', 'Ramalho', 'Fontes', 'Pires'] },
-  { nationality: '일본', first: ['Haruto', 'Sota', 'Ren', 'Kaito', 'Yuto', 'Riku'], last: ['Morikawa', 'Takeda', 'Hirano', 'Sakamoto', 'Kimura', 'Ishida'] },
-  { nationality: '호주', first: ['Liam', 'Jack', 'Noah', 'Cooper', 'Mason'], last: ['Hartley', 'Brennan', 'Walsh', 'Kerr', 'Doyle'] },
-  { nationality: '세르비아', first: ['Nikola', 'Stefan', 'Marko', 'Luka'], last: ['Petrovac', 'Ilijev', 'Markoski', 'Jankov'] },
-  { nationality: '콜롬비아', first: ['Andrés', 'Camilo', 'Julián', 'Sebastián'], last: ['Ospino', 'Restrepa', 'Villamar', 'Quintero'] },
+  { nationality: '미라도르', first: ['Tiago', 'Rafael', 'Lucas', 'Matheus', 'Bruno', 'Gustavo', 'Caio', 'Diego'], last: ['Silvano', 'Moreira', 'Teixeira', 'Barreto', 'Cardoso', 'Ramalho', 'Fontes', 'Pires'] },
+  { nationality: '카이렌', first: ['Haruto', 'Sota', 'Ren', 'Kaito', 'Yuto', 'Riku'], last: ['Morikawa', 'Takeda', 'Hirano', 'Sakamoto', 'Kimura', 'Ishida'] },
+  { nationality: '오스트랄렌', first: ['Liam', 'Jack', 'Noah', 'Cooper', 'Mason'], last: ['Hartley', 'Brennan', 'Walsh', 'Kerr', 'Doyle'] },
+  { nationality: '발테리아', first: ['Nikola', 'Stefan', 'Marko', 'Luka'], last: ['Petrovac', 'Ilijev', 'Markoski', 'Jankov'] },
+  { nationality: '엘도라', first: ['Andrés', 'Camilo', 'Julián', 'Sebastián'], last: ['Ospino', 'Restrepa', 'Villamar', 'Quintero'] },
 ];
 
 
@@ -128,7 +129,7 @@ export function generateTestSquad(club: Club, seasonStart: string): Player[] {
 
     let name: string;
     let nameEn: string | undefined;
-    let nationality = '대한민국';
+    let nationality = HOME_NATION;
     do {
       if (isForeign) {
         const f = foreignName(rng);

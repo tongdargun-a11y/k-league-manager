@@ -1,3 +1,4 @@
+import { isHomeNation } from '../../data';
 /**
  * 이적·계약 로직 (규칙 기반 AI). 금액은 '만원'.
  * 선수 가치·요구 연봉은 게임 밸런스용 추정치다.
@@ -54,7 +55,7 @@ export function squadOf(world: WorldState, clubId: string): Player[] {
 }
 
 function isForeign(p: Player) {
-  return p.nationality !== '대한민국';
+  return !isHomeNation(p.nationality);
 }
 
 /** 구단 내 해당 선수의 중요도: 포지션 그룹 내 순위 기반 (1 = 핵심) */

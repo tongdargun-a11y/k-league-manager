@@ -82,3 +82,19 @@ describe('PHASE 1-3 시즌 길이·재정 등급', () => {
     }
   });
 });
+
+describe('가상 국가', () => {
+  it('새 세계의 선수·감독 국적은 모두 가상 국가', async () => {
+    const { createNewWorld } = await import('./world');
+    const w = createNewWorld({ managerName: '가', clubId: 'stormhaven' });
+    const allowed = new Set(['솔레아', '미라도르', '카이렌', '오스트랄렌', '발테리아', '엘도라']);
+    for (const p of Object.values(w.players)) expect(allowed.has(p.nationality)).toBe(true);
+    expect(w.manager.nationality).toBe('솔레아');
+  });
+  it('구버전 세이브의 대한민국은 자국으로 취급', async () => {
+    const { isHomeNation } = await import('../data');
+    expect(isHomeNation('대한민국')).toBe(true);
+    expect(isHomeNation('솔레아')).toBe(true);
+    expect(isHomeNation('미라도르')).toBe(false);
+  });
+});

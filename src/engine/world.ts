@@ -6,7 +6,7 @@ import type {
   Club, Fixture, InboxItem, Injury, Lineup, Manager, MatchReport, Player, PlayerCareerStats, PlayerSeasonStats,
   Tactic, WorldState, GameMode,
 } from '../types';
-import { DEFAULT_START_DATE, TEST_CLUBS, TEST_COMPETITION, DEFAULT_SEASON_YEAR, competitionFor, financeMult, type SeasonLength } from '../data';
+import { DEFAULT_START_DATE, TEST_CLUBS, TEST_COMPETITION, DEFAULT_SEASON_YEAR, competitionFor, financeMult, HOME_NATION, type SeasonLength } from '../data';
 import { generateTestSquad } from '../data/testPlayers';
 import { generateFixtures } from './calendar/schedule';
 import { computeStandings } from './league/standings';
@@ -78,7 +78,7 @@ export function createNewWorld(params: { managerName: string; clubId: string; se
   const manager: Manager = {
     id: 'manager-1',
     name: params.managerName.trim() || '감독',
-    nationality: '대한민국',
+    nationality: HOME_NATION,
     tacticalStyle: 'balanced',
     reputation: 50,
     careerStartDate: startDate,
