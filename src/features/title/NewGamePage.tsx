@@ -6,6 +6,13 @@ import { datasetRepository, type DatasetSummary } from '../../repositories/saveR
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
 import { TEST_CLUBS, type SeasonLength } from '../../data';
+import { PixelCharacter } from '../../components/PixelCharacter';
+import { COUNTS, generateAppearance } from '../../engine/appearance';
+import { USER_PLAYER_POSITIONS } from '../../engine/player/userPlayer';
+import { POSITION_LABEL } from '../../engine/ratings/ovr';
+import type { PlayerAppearance, Position } from '../../types';
+
+const LOOK_PARTS: [keyof typeof COUNTS, string][] = [['hair', '헤어'], ['hairColor', '머리색'], ['skin', '피부'], ['eyes', '눈'], ['face', '얼굴형'], ['body', '체형'], ['facialHair', '수염'], ['accessory', '액세서리']];
 import { generateTestSquad } from '../../data/testPlayers';
 import { playerOvr } from '../../engine/ratings/ovr';
 import { useGame } from '../../store/gameStore';
@@ -36,6 +43,8 @@ export function NewGamePage() {
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<GameMode>('manager');
   const [seasonLength, setSeasonLength] = useState<SeasonLength>('long');
+  const [position, setPosition] = useState<Position>('CM');
+  const [look, setLook] = useState<PlayerAppearance>(() => generateAppearance('new-player'));
   const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
   const [datasetId, setDatasetId] = useState<string>(params.get('ds') ?? '');
   useEffect(() => { datasetRepository.list().then(setDatasets).catch(() => setDatasets([])); }, []);
@@ -46,7 +55,7 @@ export function NewGamePage() {
   const start = async () => {
     if (!canStart || !clubId) return;
     setBusy(true);
-    await newGame(name.trim(), clubId, datasetId || null, mode, seasonLength);
+    await newGame(name.trim(), clubId, datasetId || null, mode, seasonLength, mode === 'player' ? { name: name.trim(), position, appearance: look } : undefined);
     navigate('/game');
   };
 
@@ -54,7 +63,7 @@ export function NewGamePage() {
     <div className="mx-auto max-w-5xl p-4 md:p-8">
       <button className="btn-ghost mb-6" onClick={() => navigate('/')}><ArrowLeft size={16} /> 타이틀</button>
       <h1 className="text-2xl font-black text-white">새 게임</h1>
-      <p className="mt-1 text-sm text-slate-400">감독 이름을 정하고 지휘할 구단을 선택하세요.</p>
+      <p className="mt-1 text-sm text-slate-400">모드를 고르고 이름과 구단을 정하세요.</p>
 
       <section className="panel mt-6 p-5" aria-label="플레이 모드">
         <h2 className="panel-title">플레이 모드</h2>
@@ -76,6 +85,28 @@ export function NewGamePage() {
       <section className="panel mt-4 p-5">
         <label className="panel-title" htmlFor="mgr">1. {MODE_INFO[mode].role} 이름</label>
         <input id="mgr" className="input mt-2 max-w-sm" maxLength={20} placeholder="예: 홍길동" value={name} onChange={(e) => setName(e.target.value)} />
+        {mode === 'player' && (
+          <div className="mt-4 flex flex-wrap items-start gap-5" data-testid="player-creator">
+            <PixelCharacter a={look} className="h-36 w-32 rounded-lg" label="내 선수 미리보기" />
+            <div className="grid flex-1 gap-3 sm:grid-cols-2">
+              <label className="text-xs text-slate-400">포지션
+                <select className="input mt-1" value={position} onChange={(e) => setPosition(e.target.value as Position)} data-testid="player-position">
+                  {USER_PLAYER_POSITIONS.map((p) => <option key={p} value={p}>{POSITION_LABEL[p]} ({p})</option>)}
+                </select>
+              </label>
+              {LOOK_PARTS.map(([k, label]) => (
+                <label key={k} className="text-xs text-slate-400">{label}
+                  <div className="mt-1 flex items-center gap-2">
+                    <button type="button" className="btn-ghost px-2 py-1" onClick={() => setLook((l) => ({ ...l, [k]: ((l[k] ?? 0) + COUNTS[k] - 1) % COUNTS[k] }))} aria-label={`${label} 이전`}>‹</button>
+                    <span className="w-6 text-center text-sm text-white">{(look[k] ?? 0) + 1}</span>
+                    <button type="button" className="btn-ghost px-2 py-1" onClick={() => setLook((l) => ({ ...l, [k]: ((l[k] ?? 0) + 1) % COUNTS[k] }))} aria-label={`${label} 다음`}>›</button>
+                  </div>
+                </label>
+              ))}
+              <p className="text-xs text-slate-500 sm:col-span-2">18세 유망주로 시작합니다. 선발과 경기는 감독이 정하고, 나는 훈련과 경기 출전으로 성장합니다.</p>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="panel mt-4 p-5">

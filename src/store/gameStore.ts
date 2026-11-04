@@ -1,3 +1,4 @@
+import type { UserPlayerInput } from '../engine/player/userPlayer';
 import type { SeasonLength } from '../data';
 import { create } from 'zustand';
 import type { ClockSpeed, GameMode, Lineup, Tactic, WorldState } from '../types';
@@ -40,7 +41,7 @@ interface GameStore {
 
   // 세이브
   refreshSaves(): Promise<void>;
-  newGame(managerName: string, clubId: string, datasetId?: string | null, mode?: GameMode, seasonLength?: SeasonLength): Promise<void>;
+  newGame(managerName: string, clubId: string, datasetId?: string | null, mode?: GameMode, seasonLength?: SeasonLength, userPlayer?: UserPlayerInput): Promise<void>;
   /** 엔진 함수로 월드를 갱신 (이적·재정·훈련 등 화면 조작용) */
   mutate(fn: (w: WorldState) => WorldState): void;
   loadGame(id: string): Promise<boolean>;
@@ -98,9 +99,9 @@ export const useGame = create<GameStore>((set, get) => ({
     }
   },
 
-  async newGame(managerName, clubId, datasetId, mode, seasonLength) {
+  async newGame(managerName, clubId, datasetId, mode, seasonLength, userPlayer) {
     const ds = datasetId ? await datasetRepository.get(datasetId) : undefined;
-    const world = createNewWorld({ managerName, clubId, importedPlayers: ds?.players, mode, worldId: uid('world'), seasonLength });
+    const world = createNewWorld({ managerName, clubId, importedPlayers: ds?.players, mode, worldId: uid('world'), seasonLength, userPlayer });
     set({ world, saveId: null, legacySourceId: null, saveName: '', saveCreatedAt: null, clockSpeed: 'paused', live: null, liveRunning: false, daysSinceSave: 0 });
     await get().saveGame({ silent: true });
   },

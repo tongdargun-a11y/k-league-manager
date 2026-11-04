@@ -15,20 +15,22 @@ export interface ModeCapabilities {
   teamTraining: boolean;   // 팀 훈련 계획
   facilities: boolean;     // 시설·팬 (구단운영 전용)
   transferDirect: boolean; // 직접 영입·방출·재계약 (감독은 이사회에 요청만)
+  autoMatch: boolean;      // 내 구단 경기를 자동 진행
+  playerCareer: boolean;   // 내 선수 화면 (선수 모드)
   playable: boolean;       // 현재 플레이 가능 여부
 }
 
 export const MODE_CAPABILITIES: Record<ModeKey, ModeCapabilities> = {
-  classic: { finance: true, transfers: true, tactics: true, liveMatch: true, teamTraining: true, facilities: false, transferDirect: true, playable: true },
-  club: { finance: true, transfers: true, tactics: false, liveMatch: false, teamTraining: false, facilities: true, transferDirect: true, playable: true },
-  manager: { finance: false, transfers: true, tactics: true, liveMatch: true, teamTraining: true, facilities: false, transferDirect: false, playable: true },
-  player: { finance: false, transfers: false, tactics: false, liveMatch: false, teamTraining: false, facilities: false, transferDirect: false, playable: false },
+  classic: { finance: true, transfers: true, tactics: true, liveMatch: true, teamTraining: true, facilities: false, transferDirect: true, autoMatch: false, playerCareer: false, playable: true },
+  club: { finance: true, transfers: true, tactics: false, liveMatch: false, teamTraining: false, facilities: true, transferDirect: true, autoMatch: true, playerCareer: false, playable: true },
+  manager: { finance: false, transfers: true, tactics: true, liveMatch: true, teamTraining: true, facilities: false, transferDirect: false, autoMatch: false, playerCareer: false, playable: true },
+  player: { finance: false, transfers: false, tactics: false, liveMatch: false, teamTraining: false, facilities: false, transferDirect: false, autoMatch: true, playerCareer: true, playable: true },
 };
 
 export const MODE_INFO: Record<GameMode, { label: string; role: string; desc: string }> = {
   club: { label: '구단운영', role: '구단 대표', desc: '예산·재정, 영입과 방출, 계약을 맡습니다. 경기는 AI 감독이 치르고 결과를 받아 봅니다.' },
   manager: { label: '감독', role: '감독', desc: '전술, 선발 명단, 경기 중 교체와 전술 변경을 맡습니다. 구단 재정은 직접 운영하지 않습니다.' },
-  player: { label: '선수', role: '선수', desc: '한 명의 선수로 훈련하고 성장하며 커리어를 쌓습니다. (준비 중)' },
+  player: { label: '선수', role: '선수', desc: '내가 만든 선수 한 명으로 훈련하고 성장하며 커리어를 쌓습니다. 경기와 선발은 감독이 정합니다.' },
 };
 
 export const modeOf = (w: Pick<WorldState, 'mode'> | null | undefined): ModeKey => w?.mode ?? 'classic';
@@ -42,6 +44,7 @@ export const ROUTE_CAP: Record<string, keyof ModeCapabilities> = {
   '/game/match': 'liveMatch',
   '/game/training': 'teamTraining',
   '/game/club': 'facilities',
+  '/game/me': 'playerCareer',
 };
 
 export function canOpen(w: Pick<WorldState, 'mode'> | null | undefined, path: string): boolean {
