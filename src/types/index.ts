@@ -134,6 +134,20 @@ export interface Player {
   attributesSource?: 'imported' | 'estimated';
   /** 개인 훈련 집중 분야 (없으면 팀 훈련을 따름) */
   trainingFocus?: TrainingFocus | null;
+  /** 픽셀 캐릭터 외형 (없으면 선수 id로 결정적으로 생성) */
+  appearance?: PlayerAppearance;
+}
+
+export interface PlayerAppearance {
+  v: 1;
+  body: number;
+  skin: number;
+  face: number;
+  eyes: number;
+  hair: number;
+  hairColor: number;
+  facialHair: number;
+  accessory?: number;
 }
 
 /** 무소속 선수의 clubId */
@@ -469,7 +483,14 @@ export interface TrainingReport {
   entries: TrainingReportEntry[];
 }
 
+/** 플레이 모드. 없으면 기존 방식(classic) */
+export type GameMode = 'club' | 'manager' | 'player';
+
 export interface WorldState {
+  /** 플레이 모드 (PHASE 1~). 세이브마다 독립 */
+  mode?: GameMode;
+  /** 새 게임마다 만드는 월드 식별자 (추적·표시용) */
+  worldId?: string;
   competition: Competition;
   season: Season;
   clubs: Record<string, Club>;
@@ -518,6 +539,8 @@ export interface SaveGame {
   gameDate: GameDate;
   managerName: string;
   selectedClubId: string;
+  /** world.mode 복사 (목록 표시용) */
+  mode?: GameMode;
   world: WorldState;
 }
 

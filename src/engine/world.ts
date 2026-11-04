@@ -4,9 +4,9 @@
  */
 import type {
   Club, Fixture, InboxItem, Injury, Lineup, Manager, MatchReport, Player, PlayerCareerStats, PlayerSeasonStats,
-  Tactic, WorldState,
+  Tactic, WorldState, GameMode,
 } from '../types';
-import { DEFAULT_START_DATE, TEST_CLUBS, TEST_COMPETITION, DEFAULT_SEASON_YEAR } from '../data';
+import { DEFAULT_START_DATE, TEST_CLUBS, TEST_COMPETITION, DEFAULT_SEASON_YEAR, competitionFor, financeMult, type SeasonLength } from '../data';
 import { generateTestSquad } from '../data/testPlayers';
 import { generateFixtures } from './calendar/schedule';
 import { computeStandings } from './league/standings';
@@ -25,7 +25,7 @@ import { DEFAULT_TRAINING, INTENSITY_INJURY, INTENSITY_RECOVERY, planFor, proces
 import { createRng } from '../utils/rng';
 import { weekday } from '../utils/date';
 
-export const WORLD_SCHEMA_VERSION = 5;
+export const WORLD_SCHEMA_VERSION = 6;
 /**
  * 이 버전 이하로 저장된 세이브는 "구버전"(PHASE 0 이전 데이터)이다.
  * 구버전 원본은 덮어쓰거나 삭제하지 않는다. (세이브 스키마 버전이며 IndexedDB(Dexie) 버전과는 별개)
@@ -37,13 +37,14 @@ export const isLegacySchema = (schemaVersion: number) => schemaVersion <= LEGACY
 
 const AI_FORMATIONS: Tactic['formation'][] = ['4-4-2', '4-3-3', '4-2-3-1', '3-5-2', '4-1-4-1', '3-4-3'];
 
-export function createNewWorld(params: { managerName: string; clubId: string; seed?: number; clubs?: Club[]; importedPlayers?: Player[] }): WorldState {
+export function createNewWorld(params: { managerName: string; clubId: string; seed?: number; clubs?: Club[]; importedPlayers?: Player[]; mode?: GameMode; worldId?: string; seasonLength?: SeasonLength }): WorldState {
   const clubs = params.clubs ?? TEST_CLUBS;
   if (!clubs.some((c) => c.id === params.clubId)) throw new Error(`존재하지 않는 구단: ${params.clubId}`);
   const seed = params.seed ?? hashString(params.managerName + params.clubId) ^ 0x5bd1e995;
   const startDate = DEFAULT_START_DATE;
   const seasonId = `${TEST_COMPETITION.id}-${DEFAULT_SEASON_YEAR}`;
-  const format = TEST_COMPETITION.format;
+  const competition = competitionFor(params.seasonLength);
+  const format = competition.format;
 
   const clubMap: Record<string, Club> = {};
   const players: Record<string, Player> = {};
@@ -58,8 +59,8 @@ export function createNewWorld(params: { managerName: string; clubId: string; se
     clubMap[c.id] = {
       ...c,
       finances: {
-        balance: Math.round(bill * 4.33 * 3 + c.reputation * 1500),
-        transferBudget: Math.round(c.reputation * 1000),
+        balance: Math.round(bill * 4.33 * 3 + c.reputation * 1500 * financeMult(c)),
+        transferBudget: Math.round(c.reputation * 1000 * financeMult(c)),
         wageBudget: Math.round((bill * 1.12) / 100) * 100,
       },
     };
@@ -87,7 +88,9 @@ export function createNewWorld(params: { managerName: string; clubId: string; se
 
   const lastDate = fixtures.reduce((m, f) => (f.date > m ? f.date : m), startDate);
   const world: WorldState = {
-    competition: TEST_COMPETITION,
+    ...(params.mode ? { mode: params.mode } : {}),
+    ...(params.worldId ? { worldId: params.worldId } : {}),
+    competition,
     season: {
       id: seasonId,
       competitionId: TEST_COMPETITION.id,
@@ -145,7 +148,8 @@ export function prepareMatch(world: WorldState, fixture: Fixture): MatchState {
   const sideSetup = (clubId: string) => {
     const tactic = world.tactics[clubId] ?? DEFAULT_TACTIC;
     const isUser = clubId === world.userClubId;
-    const lineup: Lineup = isUser
+    // 구단운영 모드: 사용자 구단도 AI 감독이 선발을 정한다
+    const lineup: Lineup = isUser && world.mode !== 'club'
       ? sanitizeLineup(world.userLineup, clubId, world.players)
       : pickBestLineup(clubId, world.players, tactic.formation, format.benchSize);
     return {
@@ -382,11 +386,24 @@ export interface AdvanceResult {
  * 처리 순서: (오늘 남은 AI 경기 마감) → 날짜 증가 → 부상 회복 → 컨디션 회복 → 경기 확인 → 알림
  * 같은 날짜의 일일 처리는 processedEventIds로 한 번만 실행된다.
  */
+function clubModeAutoMatch(world: WorldState, fixture: Fixture): WorldState {
+  const w = simulateAndApply(world, fixture);
+  const f = w.fixtures.find((x) => x.id === fixture.id);
+  if (!f?.result) return w;
+  const home = w.clubs[f.homeClubId]?.shortName ?? f.homeClubId;
+  const away = w.clubs[f.awayClubId]?.shortName ?? f.awayClubId;
+  return addInbox(w, { kind: 'result', title: `경기 결과: ${home} ${f.result.homeGoals} - ${f.result.awayGoals} ${away}`, body: 'AI 감독이 지휘한 경기 결과입니다. 일정 화면에서 기록을 볼 수 있습니다.' });
+}
+
 export function advanceDay(world: WorldState): AdvanceResult {
   const today = world.clock.gameDate;
   // 사용자 경기가 오늘인데 아직 안 했다면 진행 불가
   const todays = fixtureFor(world, today, world.userClubId);
-  if (todays && todays.status !== 'played') return { world, advanced: false, stopReason: 'match-day' };
+  if (todays && todays.status !== 'played') {
+    if (world.mode !== 'club') return { world, advanced: false, stopReason: 'match-day' };
+    // 구단운영 모드: 사용자 구단 경기도 자동 진행하고 결과를 받은편지함으로 알림
+    world = clubModeAutoMatch(world, todays);
+  }
   if (world.season.status === 'finished') return { world, advanced: false, stopReason: 'season-end' };
 
   // 오늘 남은 AI 경기 마감
@@ -466,7 +483,7 @@ export function advanceDay(world: WorldState): AdvanceResult {
 
   // 오늘 사용자 경기?
   const userFixture = fixtureFor(w, newDate, w.userClubId);
-  if (userFixture && userFixture.status === 'scheduled') {
+  if (userFixture && userFixture.status === 'scheduled' && w.mode !== 'club') {
     const opp = w.clubs[userFixture.homeClubId === w.userClubId ? userFixture.awayClubId : userFixture.homeClubId];
     w = addInbox(w, { kind: 'match', title: `오늘 경기: vs ${opp.name}`, body: `${userFixture.round}라운드 경기일입니다. 대시보드에서 경기를 시작하세요.` });
     stopReason = 'match-day';

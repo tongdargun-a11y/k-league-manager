@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
+import { capsOf } from '../../engine/modes';
 import { AlertTriangle, Bell, CalendarClock, HeartPulse, Swords, Trophy } from 'lucide-react';
 import { useGame, useWorld } from '../../store/gameStore';
 import { fixtureFor, nextFixture, standingsOf } from '../../engine/world';
@@ -45,7 +46,7 @@ export function DashboardPage() {
 
   return (
     <div className="space-y-4">
-      {(isMatchDay || live) && (
+      {(isMatchDay || live) && capsOf(world).liveMatch && (
         <div className="panel flex flex-wrap items-center gap-4 border-gold-500/70 bg-gradient-to-r from-navy-800 to-navy-850 p-4">
           <Swords className="text-gold-400" />
           <div className="flex-1">

@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
+import type { GameMode } from '../../types';
+import { MODE_CAPABILITIES, MODE_INFO } from '../../engine/modes';
 import { Link, useSearchParams } from 'react-router-dom';
 import { datasetRepository, type DatasetSummary } from '../../repositories/saveRepository';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
-import { TEST_CLUBS } from '../../data';
+import { TEST_CLUBS, type SeasonLength } from '../../data';
 import { generateTestSquad } from '../../data/testPlayers';
 import { playerOvr } from '../../engine/ratings/ovr';
 import { useGame } from '../../store/gameStore';
@@ -32,6 +34,8 @@ export function NewGamePage() {
   const [params] = useSearchParams();
   const [clubId, setClubId] = useState<string | null>(params.get('club'));
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<GameMode>('manager');
+  const [seasonLength, setSeasonLength] = useState<SeasonLength>('long');
   const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
   const [datasetId, setDatasetId] = useState<string>(params.get('ds') ?? '');
   useEffect(() => { datasetRepository.list().then(setDatasets).catch(() => setDatasets([])); }, []);
@@ -42,7 +46,7 @@ export function NewGamePage() {
   const start = async () => {
     if (!canStart || !clubId) return;
     setBusy(true);
-    await newGame(name.trim(), clubId, datasetId || null);
+    await newGame(name.trim(), clubId, datasetId || null, mode, seasonLength);
     navigate('/game');
   };
 
@@ -52,8 +56,25 @@ export function NewGamePage() {
       <h1 className="text-2xl font-black text-white">새 게임</h1>
       <p className="mt-1 text-sm text-slate-400">감독 이름을 정하고 지휘할 구단을 선택하세요.</p>
 
-      <section className="panel mt-6 p-5">
-        <label className="panel-title" htmlFor="mgr">1. 감독 이름</label>
+      <section className="panel mt-6 p-5" aria-label="플레이 모드">
+        <h2 className="panel-title">플레이 모드</h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          {(Object.keys(MODE_INFO) as GameMode[]).map((m) => {
+            const ok = MODE_CAPABILITIES[m].playable;
+            return (
+              <button key={m} type="button" disabled={!ok} data-testid={`mode-${m}`} onClick={() => setMode(m)}
+                className={`rounded-lg border p-3 text-left transition ${mode === m ? 'border-gold-400 bg-navy-700' : 'border-navy-600 hover:border-navy-500'} ${ok ? '' : 'cursor-not-allowed opacity-50'}`}>
+                <div className="font-bold text-white">{MODE_INFO[m].label} 모드</div>
+                <div className="mt-1 text-xs text-slate-400">{MODE_INFO[m].desc}</div>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-2 text-xs text-slate-500">모드마다 세이브와 시즌 진행이 완전히 따로 저장됩니다.</p>
+      </section>
+
+      <section className="panel mt-4 p-5">
+        <label className="panel-title" htmlFor="mgr">1. {MODE_INFO[mode].role} 이름</label>
         <input id="mgr" className="input mt-2 max-w-sm" maxLength={20} placeholder="예: 홍길동" value={name} onChange={(e) => setName(e.target.value)} />
       </section>
 
@@ -108,6 +129,12 @@ export function NewGamePage() {
           <div className="flex-1">
             <div className="text-lg font-bold text-white">{club.name}</div>
             <div className="text-sm text-slate-400">이사회 목표: <span className="font-semibold text-gold-300">{expectation(club.reputation)}</span> · 선수단 {squadInfo[club.id].size}명 · 이적 예산 {(club.finances.transferBudget / 10000).toFixed(1)}억 원 (게임용 추정)</div>
+          </div>
+          <div className="flex gap-1 rounded-lg border border-navy-600 p-1 text-sm" role="radiogroup" aria-label="시즌 길이">
+            {([['long', '정규 33라운드'], ['short', '짧은 22라운드']] as const).map(([k, l]) => (
+              <button key={k} type="button" role="radio" aria-checked={seasonLength === k} data-testid={`season-${k}`} onClick={() => setSeasonLength(k)}
+                className={`rounded px-3 py-1.5 ${seasonLength === k ? 'bg-gold-500 font-bold text-navy-950' : 'text-slate-300 hover:bg-navy-700'}`}>{l}</button>
+            ))}
           </div>
           <button className="btn-gold px-6 py-3 text-base" disabled={!canStart} onClick={start}>
             {busy ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />} 부임하기

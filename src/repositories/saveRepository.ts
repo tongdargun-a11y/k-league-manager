@@ -173,6 +173,7 @@ export const saveRepository = {
       gameDate: params.world.clock.gameDate,
       managerName: params.world.manager.name,
       selectedClubId: params.world.userClubId,
+      ...(params.world.mode ? { mode: params.world.mode } : {}),
       world: params.world,
     };
     await db.transaction('rw', db.saves, db.summaries, async () => {
