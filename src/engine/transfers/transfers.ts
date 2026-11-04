@@ -297,10 +297,11 @@ export function processContracts(world: WorldState, date: GameDate): WorldState 
   for (const p of Object.values(world.players)) {
     if (p.clubId === FREE_AGENT || p.clubId === RETIRED) continue;
     if (w.modeState?.kind === 'player' && w.modeState.userPlayerId === p.id && p.contract.endDate < date) {
-      // 선수 모드: 내 선수는 계약이 끝나면 구단과 2년 자동 연장 (PHASE 3-3에서 협상으로 바뀜)
+      // 선수 모드: 내 선수는 계약이 끝나면 현재 능력 기준 주급으로 2년 재계약
       const year = Number(date.slice(0, 4));
-      w = { ...w, players: { ...w.players, [p.id]: { ...w.players[p.id], contract: { ...p.contract, startDate: date, endDate: `${year + 2}-12-31` } } } };
-      w = addInbox(w, { kind: 'info', title: '계약 연장', body: `구단과 계약을 ${year + 2}년 말까지 연장했습니다.` });
+      const wage = Math.max(p.contract.wage, wageDemand(p, date, w.clubs[p.clubId].reputation));
+      w = { ...w, players: { ...w.players, [p.id]: { ...w.players[p.id], contract: { startDate: date, endDate: `${year + 2}-12-31`, wage } } } };
+      w = addInbox(w, { kind: 'info', title: '재계약', body: `구단과 ${year + 2}년 말까지 재계약했습니다. 새 주급 ${wage.toLocaleString()}만 원.` });
       continue;
     }
     if (p.contract.endDate < date) {

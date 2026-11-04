@@ -1,5 +1,5 @@
 import { capsOf } from './modes';
-import { createUserPlayer, type UserPlayerInput } from './player/userPlayer';
+import { createUserPlayer, myMatchLine, type UserPlayerInput } from './player/userPlayer';
 /**
  * 월드(세이브 전체 상태) 단위의 순수 로직: 새 게임 생성, 경기 결과 반영, 하루 진행.
  * 모든 함수는 입력 world를 변경하지 않고 새 world를 반환한다.
@@ -407,7 +407,8 @@ function clubModeAutoMatch(world: WorldState, fixture: Fixture): WorldState {
   if (!f?.result) return w;
   const home = w.clubs[f.homeClubId]?.shortName ?? f.homeClubId;
   const away = w.clubs[f.awayClubId]?.shortName ?? f.awayClubId;
-  return addInbox(w, { kind: 'result', title: `경기 결과: ${home} ${f.result.homeGoals} - ${f.result.awayGoals} ${away}`, body: 'AI 감독이 지휘한 경기 결과입니다. 일정 화면에서 기록을 볼 수 있습니다.' });
+  const mine = myMatchLine(w, f.id);
+  return addInbox(w, { kind: 'result', title: `경기 결과: ${home} ${f.result.homeGoals} - ${f.result.awayGoals} ${away}`, body: mine ? `내 활약: ${mine}` : 'AI 감독이 지휘한 경기 결과입니다. 일정 화면에서 기록을 볼 수 있습니다.' });
 }
 
 export function advanceDay(world: WorldState): AdvanceResult {

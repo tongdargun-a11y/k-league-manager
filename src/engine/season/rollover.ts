@@ -117,7 +117,7 @@ export function startNextSeason(world: WorldState): WorldState {
   for (const p of Object.values(world.players)) {
     if (p.clubId === RETIRED) { players[p.id] = p; continue; }
     const aged = agePlayer(p, rng, on);
-    if (!(world.modeState?.kind === 'player' && world.modeState.userPlayerId === p.id) && rng.chance(retireChance(aged, on))) {
+    if (!(world.modeState?.kind === 'player' && world.modeState.userPlayerId === p.id && ageOn(aged.birthDate, on) < 38) && rng.chance(retireChance(aged, on))) {
       players[p.id] = { ...aged, clubId: RETIRED, contract: { ...aged.contract, wage: 0, endDate: on } };
       retiredCount++;
       if (p.clubId === world.userClubId) retiredUser.push(p.name);
