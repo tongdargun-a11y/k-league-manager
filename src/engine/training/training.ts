@@ -1,3 +1,4 @@
+import { clubState, trainingMult } from '../club/facilities';
 /**
  * 훈련·성장 (주 단위). 성장 요인: 나이, 잠재력과 현재 OVR 차이, 훈련 강도, 최근 출전 시간.
  * 30세 이후에는 피지컬 능력치가 천천히 감소한다. 난수는 날짜·선수 id로 시드를 고정해 재현 가능.
@@ -48,12 +49,12 @@ export function growthRate(p: Player, today: GameDate, intensity: TrainingIntens
  * 한 선수의 주간 훈련 결과. 순수 함수.
  * @param recentMinutes 최근 약 3경기 출전 시간
  */
-export function trainPlayer(p: Player, plan: TrainingPlan, today: GameDate, recentMinutes: number): { player: Player; entry: TrainingReportEntry | null } {
+export function trainPlayer(p: Player, plan: TrainingPlan, today: GameDate, recentMinutes: number, mult = 1): { player: Player; entry: TrainingReportEntry | null } {
   const focus = p.trainingFocus ?? plan.focus;
   if (focus === 'rest') return { player: p, entry: null };
   const rng = createRng(hashString(`train:${today}:${p.id}`));
   const age = ageOn(p.birthDate, today);
-  const base = growthRate(p, today, plan.intensity, recentMinutes);
+  const base = growthRate(p, today, plan.intensity, recentMinutes) * mult;
   const posKeys = Object.keys(POSITION_WEIGHTS[p.positions[0]]) as AttributeKey[];
   const focusKeys = focus === 'balanced' ? [] : groupKeys(FOCUS_GROUP[focus]);
   const attrs = { ...p.attributes };
@@ -102,10 +103,12 @@ export function processWeeklyTraining(world: WorldState, date: GameDate): WorldS
   const recent = recentMinutesMap(world);
   const players = { ...world.players };
   const entries: TrainingReportEntry[] = [];
+  const cst = clubState(world);
+  const userMult = cst ? trainingMult(cst) : 1;
   for (const p of Object.values(world.players)) {
     if (p.clubId === FREE_AGENT || p.clubId === RETIRED || p.status.injuryId) continue;
     const plan = planFor(world, p.clubId);
-    const { player, entry } = trainPlayer(p, plan, date, recent.get(p.id) ?? 0);
+    const { player, entry } = trainPlayer(p, plan, date, recent.get(p.id) ?? 0, p.clubId === world.userClubId ? userMult : 1);
     players[p.id] = player;
     if (entry && p.clubId === world.userClubId) entries.push(entry);
   }

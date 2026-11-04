@@ -19,6 +19,7 @@ import { addInbox } from './inbox';
 export { addInbox } from './inbox';
 import { clamp, playerOvr, positionGroup } from './ratings/ovr';
 import { FREE_AGENT, RETIRED } from '../types';
+import { applyFanResult, attendanceMult, clubState, defaultClubState } from './club/facilities';
 import { TICKET_PRICE, estimateAttendance, prizeMoney, processMonthly, recordTx, weeklyWageBill } from './finance/finance';
 import { processContracts, processTransferDay } from './transfers/transfers';
 import { DEFAULT_TRAINING, INTENSITY_INJURY, INTENSITY_RECOVERY, planFor, processWeeklyTraining } from './training/training';
@@ -89,6 +90,7 @@ export function createNewWorld(params: { managerName: string; clubId: string; se
   const lastDate = fixtures.reduce((m, f) => (f.date > m ? f.date : m), startDate);
   const world: WorldState = {
     ...(params.mode ? { mode: params.mode } : {}),
+    ...(params.mode === 'club' ? { modeState: defaultClubState() } : {}),
     ...(params.worldId ? { worldId: params.worldId } : {}),
     competition,
     season: {
@@ -312,11 +314,13 @@ export function applyMatchResult(world: WorldState, state: MatchState): WorldSta
     liveMatch: world.liveMatch?.fixtureId === fixture.id ? null : world.liveMatch,
   };
   for (const item of inboxAdds) next = addInbox(next, item);
+  if (isUserMatch) next = applyFanResult(next, gfBy(world.userClubId), gaBy(world.userClubId));
   // 홈 경기 입장 수입
   const homeClub = next.clubs[fixture.homeClubId];
   const names = Object.fromEntries(Object.values(next.clubs).map((c) => [c.id, c.name]));
   const rank = computeStandings(next.season.clubIds, next.fixtures, format, names).findIndex((r) => r.clubId === homeClub.id) + 1;
-  const attendance = estimateAttendance(homeClub, rank || 6, next.season.clubIds.length);
+  const cst = homeClub.id === next.userClubId ? clubState(next) : null;
+  const attendance = Math.round(estimateAttendance(homeClub, rank || 6, next.season.clubIds.length) * (cst ? attendanceMult(cst) : 1));
   next = recordTx(next, { date, clubId: homeClub.id, category: 'gate', amount: Math.round(attendance * TICKET_PRICE), note: `${fixture.round}R 홈경기 관중 ${attendance.toLocaleString()}명` });
   return next;
 }

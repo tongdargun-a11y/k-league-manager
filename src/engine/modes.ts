@@ -13,14 +13,15 @@ export interface ModeCapabilities {
   tactics: boolean;        // 전술·라인업 설정
   liveMatch: boolean;      // 경기 직접 지휘 (아니면 자동 진행)
   teamTraining: boolean;   // 팀 훈련 계획
+  facilities: boolean;     // 시설·팬 (구단운영 전용)
   playable: boolean;       // 현재 플레이 가능 여부
 }
 
 export const MODE_CAPABILITIES: Record<ModeKey, ModeCapabilities> = {
-  classic: { finance: true, transfers: true, tactics: true, liveMatch: true, teamTraining: true, playable: true },
-  club: { finance: true, transfers: true, tactics: false, liveMatch: false, teamTraining: false, playable: true },
-  manager: { finance: false, transfers: true, tactics: true, liveMatch: true, teamTraining: true, playable: true },
-  player: { finance: false, transfers: false, tactics: false, liveMatch: false, teamTraining: false, playable: false },
+  classic: { finance: true, transfers: true, tactics: true, liveMatch: true, teamTraining: true, facilities: false, playable: true },
+  club: { finance: true, transfers: true, tactics: false, liveMatch: false, teamTraining: false, facilities: true, playable: true },
+  manager: { finance: false, transfers: true, tactics: true, liveMatch: true, teamTraining: true, facilities: false, playable: true },
+  player: { finance: false, transfers: false, tactics: false, liveMatch: false, teamTraining: false, facilities: false, playable: false },
 };
 
 export const MODE_INFO: Record<GameMode, { label: string; role: string; desc: string }> = {
@@ -39,6 +40,7 @@ export const ROUTE_CAP: Record<string, keyof ModeCapabilities> = {
   '/game/tactics': 'tactics',
   '/game/match': 'liveMatch',
   '/game/training': 'teamTraining',
+  '/game/club': 'facilities',
 };
 
 export function canOpen(w: Pick<WorldState, 'mode'> | null | undefined, path: string): boolean {
