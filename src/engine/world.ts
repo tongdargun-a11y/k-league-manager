@@ -25,7 +25,13 @@ import { DEFAULT_TRAINING, INTENSITY_INJURY, INTENSITY_RECOVERY, planFor, proces
 import { createRng } from '../utils/rng';
 import { weekday } from '../utils/date';
 
-export const WORLD_SCHEMA_VERSION = 4;
+export const WORLD_SCHEMA_VERSION = 5;
+/**
+ * 이 버전 이하로 저장된 세이브는 "구버전"(PHASE 0 이전, 실제 K리그 테스트 데이터 시절)이다.
+ * 구버전 원본은 덮어쓰거나 삭제하지 않는다. (세이브 스키마 버전이며 IndexedDB(Dexie) 버전과는 별개)
+ */
+export const LEGACY_MAX_SCHEMA_VERSION = 4;
+export const isLegacySchema = (schemaVersion: number) => schemaVersion <= LEGACY_MAX_SCHEMA_VERSION;
 
 // ───────────────────────── 새 게임 ─────────────────────────
 

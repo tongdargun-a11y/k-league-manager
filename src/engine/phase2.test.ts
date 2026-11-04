@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { advanceDay, applyMatchResult, createNewWorld, fixtureFor, prepareMatch } from './world';
+import { advanceDay, applyMatchResult, createNewWorld, fixtureFor, prepareMatch, WORLD_SCHEMA_VERSION } from './world';
 import { simulateToEnd } from './match/engine';
 import { parseCsv, parseInput, validateAndBuild, CSV_TEMPLATE, normalizePosition } from './import/importPlayers';
 import { TEST_CLUBS } from '../data';
@@ -165,7 +165,7 @@ describe('세이브 마이그레이션', () => {
     const v1 = { id: 's', schemaVersion: 1, name: 'n', createdAt: '', updatedAt: '', gameDate: w.clock.gameDate, managerName: 'T', selectedClubId: 'daegu',
       world: { ...v1world, seasonStats: { 'kleague1-2026:daegu-p01': { playerId: 'daegu-p01', seasonId: 'kleague1-2026', clubId: 'daegu', appearances: 1, starts: 1, minutes: 90, goals: 1, assists: 0, yellowCards: 0, redCards: 0, ratingSum: 7, ratingCount: 1, cleanSheets: 0 } } } } as never;
     const v2 = migrateSave(v1);
-    expect(v2.schemaVersion).toBe(4);
+    expect(v2.schemaVersion).toBe(WORLD_SCHEMA_VERSION);
     expect(v2.world.history).toEqual([]);
     expect(v2.world.finance.ledger).toEqual([]);
     expect(v2.world.training.daegu.focus).toBe('balanced');

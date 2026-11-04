@@ -60,9 +60,9 @@ export function SavesPage() {
         <ul className="divide-y divide-navy-700">
           {saves.map((s) => (
             <li key={s.id} className="flex items-center gap-3 py-2.5">
-              <ClubBadge club={world.clubs[s.selectedClubId]} size={28} />
+              <ClubBadge club={s.club} size={28} />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-semibold text-white">{s.name} {s.id === saveId && <span className="ml-1 rounded bg-gold-500/20 px-1.5 text-[10px] text-gold-300">현재</span>}</div>
+                <div className="truncate text-sm font-semibold text-white">{s.name} {s.id === saveId && <span className="ml-1 rounded bg-gold-500/20 px-1.5 text-[10px] text-gold-300">현재</span>}{s.legacy && <span className="ml-1 rounded bg-slate-500/30 px-1.5 text-[10px] text-slate-300">구버전 v{s.schemaVersion} · 원본 보존</span>}</div>
                 <div className="text-xs text-slate-400">게임 날짜 {formatKorean(s.gameDate, false)} · {new Date(s.updatedAt).toLocaleString('ko-KR')}</div>
               </div>
               {s.id !== saveId && (
@@ -70,11 +70,11 @@ export function SavesPage() {
                   <FolderOpen size={14} /> 불러오기
                 </button>
               )}
-              <button className="rounded p-1.5 text-slate-500 hover:bg-navy-700 hover:text-rose-300" disabled={s.id === saveId} aria-label="삭제"
+              {!s.legacy && <button className="rounded p-1.5 text-slate-500 hover:bg-navy-700 hover:text-rose-300" disabled={s.id === saveId} aria-label="삭제"
                 title={s.id === saveId ? '현재 플레이 중인 세이브는 삭제할 수 없습니다' : '삭제'}
                 onClick={() => { if (window.confirm(`'${s.name}' 세이브를 삭제할까요? 되돌릴 수 없습니다.`)) void del(s.id); }}>
                 <Trash2 size={16} />
-              </button>
+              </button>}
             </li>
           ))}
         </ul>

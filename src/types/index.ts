@@ -514,7 +514,11 @@ export interface SaveGame {
 }
 
 /** 세이브 목록용 요약 (world 없이) */
-export type SaveSummary = Omit<SaveGame, 'world'>;
+/** 목록 표시용 구단 정보 (세이브 안의 구단에서 복사, 현재 게임 데이터와 무관) */
+export type SaveClubInfo = Pick<Club, 'id' | 'name' | 'shortName' | 'colors'> & { founded?: number };
+
+/** 세이브 목록용 요약 (world 없이). club은 PHASE 0 이후 저장분에만 있다. */
+export type SaveSummary = Omit<SaveGame, 'world'> & { club?: SaveClubInfo };
 
 export interface AssetMetadata {
   id: string;

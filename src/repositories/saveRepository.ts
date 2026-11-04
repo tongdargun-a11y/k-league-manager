@@ -1,6 +1,6 @@
 import Dexie, { type Table } from 'dexie';
-import type { SaveGame, SaveSummary, WorldState } from '../types';
-import { WORLD_SCHEMA_VERSION } from '../engine/world';
+import type { SaveClubInfo, SaveGame, SaveSummary, WorldState } from '../types';
+import { WORLD_SCHEMA_VERSION, isLegacySchema } from '../engine/world';
 import { migrateSave } from './migrations';
 import { uid } from '../utils/id';
 import type { PlayerDataset } from '../engine/import/importPlayers';
@@ -114,23 +114,54 @@ export const imageRepository = {
   clear: () => db.images.clear(),
 };
 
+function clubInfo(save: SaveGame): SaveClubInfo | undefined {
+  const c = save.world?.clubs?.[save.selectedClubId];
+  return c ? { id: c.id, name: c.name, shortName: c.shortName, colors: c.colors, founded: c.founded } : undefined;
+}
+
 function toSummary(save: SaveGame): SaveSummary {
   const { world: _world, ...rest } = save;
   void _world;
-  return rest;
+  return { ...rest, club: clubInfo(save) };
 }
 
+/** 세이브 목록 항목: 구버전 여부와 표시용 구단 정보 포함 */
+export type SaveListItem = Omit<SaveSummary, 'club'> & { legacy: boolean; club: SaveClubInfo | null };
+
+export class LegacySaveProtectedError extends Error {}
+
 export const saveRepository = {
-  async list(): Promise<SaveSummary[]> {
-    return db.summaries.orderBy('updatedAt').reverse().toArray();
+  /** 읽기 전용. 요약에 구단 정보가 없는 구버전 세이브는 세이브 본문에서 구단 이름·색상을 읽어 온다. */
+  async list(): Promise<SaveListItem[]> {
+    const rows = await db.summaries.orderBy('updatedAt').reverse().toArray();
+    return Promise.all(rows.map(async (s) => {
+      let club = s.club ?? null;
+      if (!club) {
+        const raw = await db.saves.get(s.id);
+        club = (raw && clubInfo(raw)) ?? null;
+      }
+      return { ...s, club, legacy: isLegacySchema(s.schemaVersion) };
+    }));
   },
 
   async load(id: string): Promise<SaveGame | null> {
+    return (await this.loadForPlay(id))?.save ?? null;
+  },
+
+  /** 불러오기. 변환(마이그레이션)은 메모리에서만 하며 DB 행은 바꾸지 않는다. */
+  async loadForPlay(id: string): Promise<{ save: SaveGame; legacy: boolean } | null> {
     const raw = await db.saves.get(id);
-    return raw ? migrateSave(raw) : null;
+    if (!raw) return null;
+    const legacy = typeof raw.schemaVersion === 'number' && isLegacySchema(raw.schemaVersion);
+    return { save: migrateSave(raw), legacy };
   },
 
   async write(params: { id?: string; name: string; world: WorldState; createdAt?: string }): Promise<SaveGame> {
+    // 안전장치: 구버전 원본 행에는 절대 덮어쓰지 않는다
+    if (params.id) {
+      const existing = await db.saves.get(params.id);
+      if (existing && isLegacySchema(existing.schemaVersion)) throw new LegacySaveProtectedError('구버전 세이브 원본에는 저장할 수 없습니다.');
+    }
     const now = new Date().toISOString();
     const club = params.world.clubs[params.world.userClubId];
     const save: SaveGame = {
@@ -152,6 +183,8 @@ export const saveRepository = {
   },
 
   async remove(id: string): Promise<void> {
+    const existing = await db.saves.get(id);
+    if (existing && isLegacySchema(existing.schemaVersion)) throw new LegacySaveProtectedError('구버전 세이브는 삭제할 수 없습니다.');
     await db.transaction('rw', db.saves, db.summaries, async () => {
       await db.saves.delete(id);
       await db.summaries.delete(id);
