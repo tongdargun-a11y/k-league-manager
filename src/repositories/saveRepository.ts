@@ -4,7 +4,7 @@ import { WORLD_SCHEMA_VERSION } from '../engine/world';
 import { migrateSave } from './migrations';
 import { uid } from '../utils/id';
 import type { PlayerDataset } from '../engine/import/importPlayers';
-import { buildBackup, type BackupFile, type BackupImage } from './backup';
+import { buildBackup, planRestore, sameSaveContent, type BackupFile, type BackupImage } from './backup';
 
 /**
  * IndexedDB 세이브 저장소 (Dexie).
@@ -74,6 +74,36 @@ export const backupRepository = {
       }
       return buildBackup({ saves, datasets, images, appSaveSchemaVersion: WORLD_SCHEMA_VERSION, dbVersion: db.verno });
     });
+  },
+
+  /**
+   * 백업 복구: 항상 새 id로 "추가"만 한다. add()는 같은 키가 있으면 실패하므로 기존 행을 덮어쓸 수 없다.
+   * 전부 하나의 트랜잭션이라 중간에 실패하면 아무것도 저장되지 않는다.
+   * 저장 후 다시 읽어 원본과 내용이 같은지 검사한다.
+   */
+  async restore(backup: BackupFile): Promise<{ saves: number; datasets: number; images: number; skippedImages: number; verified: boolean; problems: string[] }> {
+    const existingImageKeys = new Set((await db.images.toCollection().primaryKeys()) as string[]);
+    const plan = planRestore(backup, { newId: uid, existingImageKeys });
+    // Dexie 트랜잭션 안에서는 fetch 같은 외부 비동기를 기다리면 안 되므로 이미지를 미리 변환
+    const imageRows = await Promise.all(plan.images.map(async (m) => ({ key: m.key, blob: await (await fetch(m.dataUrl)).blob(), updatedAt: m.updatedAt })));
+    await db.transaction('rw', db.saves, db.summaries, db.datasets, db.images, async () => {
+      for (const { save } of plan.saves) {
+        await db.saves.add(save);
+        await db.summaries.add(toSummary(save));
+      }
+      for (const { dataset } of plan.datasets) await db.datasets.add(dataset);
+      for (const row of imageRows) await db.images.add(row);
+    });
+    const problems: string[] = [];
+    for (let i = 0; i < plan.saves.length; i++) {
+      const stored = await db.saves.get(plan.saves[i].save.id);
+      if (!stored || !sameSaveContent(stored, backup.saves[i])) problems.push(`세이브 '${backup.saves[i].name}' 내용 불일치`);
+    }
+    for (let i = 0; i < plan.datasets.length; i++) {
+      const stored = await db.datasets.get(plan.datasets[i].dataset.id);
+      if (!stored || JSON.stringify(stored.players) !== JSON.stringify(backup.datasets[i].players)) problems.push(`데이터셋 '${backup.datasets[i].name}' 내용 불일치`);
+    }
+    return { saves: plan.saves.length, datasets: plan.datasets.length, images: plan.images.length, skippedImages: backup.images.length - plan.images.length, verified: problems.length === 0, problems };
   },
 };
 

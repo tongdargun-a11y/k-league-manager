@@ -80,7 +80,7 @@ export function TitlePage() {
         </div>
         <div className="panel mt-4 p-5">
           <h2 className="panel-title mb-3">데이터 백업</h2>
-          <BackupPanel />
+          <BackupPanel onRestored={() => void refresh()} />
         </div>
         <p className="mt-4 text-center text-xs leading-relaxed text-slate-500">{DATA_NOTICE}</p>
       </div>

@@ -53,7 +53,7 @@ export function SavesPage() {
       </Panel>
 
       <Panel title="전체 데이터 백업">
-        <BackupPanel />
+        <BackupPanel onRestored={() => void refresh()} />
       </Panel>
 
       <Panel title="세이브 목록">
