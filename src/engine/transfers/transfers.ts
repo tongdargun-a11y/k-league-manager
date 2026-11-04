@@ -308,6 +308,13 @@ export function processContracts(world: WorldState, date: GameDate): WorldState 
       w = addInbox(w, { kind: 'info', title: '재계약', body: `구단과 ${year + 2}년 말까지 재계약했습니다. 새 주급 ${wage.toLocaleString()}만 원.` });
       continue;
     }
+    if (p.contract.endDate < date && p.clubId !== w.userClubId && w.clubs[p.clubId] && (ageOn(p.birthDate, date) < 33 || squadOf(w, p.clubId).length <= 22)) {
+      // AI 구단: 33세 미만이거나 인원이 부족하면 2년 재계약 (PHASE 4 밸런스: 선수단이 계속 줄어드는 문제)
+      const year = Number(date.slice(0, 4));
+      const wage = Math.max(p.contract.wage, wageDemand(p, date, w.clubs[p.clubId].reputation));
+      w = { ...w, players: { ...w.players, [p.id]: { ...w.players[p.id], contract: { startDate: date, endDate: `${year + 2}-12-31`, wage } } } };
+      continue;
+    }
     if (p.contract.endDate < date) {
       w = executeTransfer(w, { playerId: p.id, toClubId: FREE_AGENT, fee: 0, wage: 0, years: 0, type: 'contract-expired' });
       if (p.clubId === world.userClubId) w = addInbox(w, { kind: 'info', title: `${p.name} 계약 만료`, body: `${p.name} 선수의 계약이 끝나 팀을 떠났습니다.` });
