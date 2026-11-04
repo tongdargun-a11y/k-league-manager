@@ -42,6 +42,9 @@ const MIGRATIONS: Record<number, (save: SaveGame) => SaveGame> = {
       players: Object.fromEntries(Object.entries(save.world.players).map(([id, p]) => [id, p.meta.sourceType === 'test' && p.nameEn && p.name === p.nameEn ? { ...p, name: koreanizeName(p.nameEn) } : p])),
     },
   }),
+  // v4 → v5: 데이터 변경 없음. v5부터 저장된 세이브는 PHASE 0 이후 세이브(구버전 아님)라는 표시.
+  // 구버전 원본은 이 변환 결과로 덮어쓰지 않는다 (gameStore.loadGame 참고).
+  4: (save) => ({ ...save, schemaVersion: 5 }),
 };
 
 export class SaveVersionError extends Error {}

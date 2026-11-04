@@ -7,6 +7,7 @@ import { ClubBadge } from '../../components/ClubBadge';
 import { formatKorean } from '../../utils/date';
 import { DATA_NOTICE } from '../../data';
 import { WORLD_SCHEMA_VERSION } from '../../engine/world';
+import { BackupPanel } from '../backup/BackupPanel';
 
 export function SavesPage() {
   const world = useWorld();
@@ -51,13 +52,17 @@ export function SavesPage() {
         <p className="mt-1 text-xs text-slate-500">자동 저장 시점: 새 게임 생성, 날짜 진행 7일마다, 날짜 진행 정지·경기일 도착·이적 제안 도착, 킥오프·하프타임, 경기 결과 반영 후. 저장은 브라우저(IndexedDB)에만 되며 다른 기기와 공유되지 않습니다.</p>
       </Panel>
 
+      <Panel title="전체 데이터 백업">
+        <BackupPanel onRestored={() => void refresh()} />
+      </Panel>
+
       <Panel title="세이브 목록">
         <ul className="divide-y divide-navy-700">
           {saves.map((s) => (
             <li key={s.id} className="flex items-center gap-3 py-2.5">
-              <ClubBadge club={world.clubs[s.selectedClubId]} size={28} />
+              <ClubBadge club={s.club} size={28} />
               <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-semibold text-white">{s.name} {s.id === saveId && <span className="ml-1 rounded bg-gold-500/20 px-1.5 text-[10px] text-gold-300">현재</span>}</div>
+                <div className="truncate text-sm font-semibold text-white">{s.name} {s.id === saveId && <span className="ml-1 rounded bg-gold-500/20 px-1.5 text-[10px] text-gold-300">현재</span>}{s.legacy && <span className="ml-1 rounded bg-slate-500/30 px-1.5 text-[10px] text-slate-300">구버전 v{s.schemaVersion} · 원본 보존</span>}</div>
                 <div className="text-xs text-slate-400">게임 날짜 {formatKorean(s.gameDate, false)} · {new Date(s.updatedAt).toLocaleString('ko-KR')}</div>
               </div>
               {s.id !== saveId && (
@@ -65,11 +70,11 @@ export function SavesPage() {
                   <FolderOpen size={14} /> 불러오기
                 </button>
               )}
-              <button className="rounded p-1.5 text-slate-500 hover:bg-navy-700 hover:text-rose-300" disabled={s.id === saveId} aria-label="삭제"
+              {!s.legacy && <button className="rounded p-1.5 text-slate-500 hover:bg-navy-700 hover:text-rose-300" disabled={s.id === saveId} aria-label="삭제"
                 title={s.id === saveId ? '현재 플레이 중인 세이브는 삭제할 수 없습니다' : '삭제'}
                 onClick={() => { if (window.confirm(`'${s.name}' 세이브를 삭제할까요? 되돌릴 수 없습니다.`)) void del(s.id); }}>
                 <Trash2 size={16} />
-              </button>
+              </button>}
             </li>
           ))}
         </ul>
@@ -80,9 +85,9 @@ export function SavesPage() {
         <p className="text-sm leading-relaxed text-slate-300">{DATA_NOTICE}</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-400">
           <li>선수 이름은 무작위 조합으로 생성한 가상 인물이며 실존 선수와 무관합니다.</li>
-          <li>선수 사진은 권리가 확인된 파일만 사용합니다. 현재는 포지션별 기본 실루엣을 표시합니다.</li>
-          <li>일정과 대회 규칙은 테스트용 설정(src/data/index.ts)이며 실제 시즌 일정과 다릅니다.</li>
-          <li>직접 확보한 선수 데이터는 타이틀 화면의 'CSV/JSON 가져오기'로 데이터셋을 만든 뒤 새 게임에서 선택할 수 있습니다. (진행 중인 세이브에는 적용되지 않습니다)</li>
+          <li>구단·선수·지명은 모두 가상입니다. 선수 그림은 현재 기본 실루엣이며, 픽셀 캐릭터로 바뀔 예정입니다.</li>
+          <li>일정과 대회 규칙은 게임 설정값(src/data/index.ts)입니다.</li>
+          <li>직접 만든 가상 선수 데이터는 타이틀 화면의 'CSV/JSON 가져오기'로 데이터셋을 만든 뒤 새 게임에서 선택할 수 있습니다. (진행 중인 세이브에는 적용되지 않습니다)</li>
         </ul>
       </Panel>
     </div>

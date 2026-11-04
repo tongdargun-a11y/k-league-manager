@@ -1,11 +1,13 @@
-import type { Club } from '../types';
+import type { SaveClubInfo } from '../types';
+
+type ClubLike = SaveClubInfo;
 import { clubImageKey, useLocalImage } from '../store/localImages';
 
 /**
  * 구단 배지. 사용자가 이 브라우저에 직접 추가한 개인용 로고가 있으면 그것을,
  * 없으면 자체 디자인 방패 엠블럼(구단 색상 + 약칭)을 표시한다. 엠블럼 파일은 저장소에 포함하지 않는다.
  */
-export function ClubBadge({ club, size = 32 }: { club: Club | undefined; size?: number }) {
+export function ClubBadge({ club, size = 32 }: { club: ClubLike | null | undefined; size?: number }) {
   const local = useLocalImage(club ? clubImageKey(club.id) : '');
   if (!club) return null;
   if (local) {
@@ -17,7 +19,7 @@ export function ClubBadge({ club, size = 32 }: { club: Club | undefined; size?: 
 const SHIELD = 'M50 4 L92 16 V52 C92 80 72 98 50 108 C28 98 8 80 8 52 V16 Z';
 
 /** 자체 디자인 방패 엠블럼: 구단 색상 + 약칭. 실제 엠블럼을 본뜨지 않는다. 무늬는 구단 id로 고정. */
-function ShieldCrest({ club, size }: { club: Club; size: number }) {
+function ShieldCrest({ club, size }: { club: ClubLike; size: number }) {
   const { primary, secondary } = club.colors;
   const pattern = [...club.id].reduce((h, c) => (h * 31 + c.charCodeAt(0)) >>> 0, 7) % 4;
   const clip = `crest-${club.id}`;

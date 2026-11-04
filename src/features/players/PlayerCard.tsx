@@ -18,7 +18,6 @@ export function PlayerCard({ player, club, career, gameDate, seasonLabel, clubNa
         <div className="min-w-0">
           <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gold-400">{player.nationality} · {player.positions[0]}</div>
           <h2 className="mt-0.5 truncate text-2xl font-black text-white">{player.name}</h2>
-          {player.nameEn && <div className="truncate text-xs text-slate-400">{player.nameEn}</div>}
         </div>
         <div className="text-right">
           <div className="text-4xl font-black leading-none text-gold-400 tabular-nums">{player.shirtNumber}</div>

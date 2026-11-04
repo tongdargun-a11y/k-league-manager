@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ClockSpeed, Lineup, SaveSummary, Tactic, WorldState } from '../types';
+import type { ClockSpeed, Lineup, Tactic, WorldState } from '../types';
 import {
   advanceDay, applyMatchResult, checkSeasonEnd, createNewWorld, fixtureFor, prepareMatch, simulateDueAIFixtures,
 } from '../engine/world';
@@ -7,7 +7,7 @@ import {
   autoReplaceInjured, canSubstitute, changeTactic, simulateToEnd, stepMinute, substitute, type MatchState, type SideKey,
 } from '../engine/match/engine';
 import { validateLineup } from '../engine/match/lineup';
-import { saveRepository, prefs, datasetRepository } from '../repositories/saveRepository';
+import { saveRepository, prefs, datasetRepository, type SaveListItem } from '../repositories/saveRepository';
 
 export type LiveSpeed = 'slow' | 'normal' | 'fast';
 
@@ -25,7 +25,9 @@ interface GameStore {
   clockSpeed: ClockSpeed;
   saving: boolean;
   lastSavedAt: string | null;
-  saves: SaveSummary[];
+  saves: SaveListItem[];
+  /** 구버전 세이브를 불러와 플레이 중이면 그 원본 id (원본은 덮어쓰지 않고 새 세이브로 저장) */
+  legacySourceId: string | null;
   toasts: Toast[];
   daysSinceSave: number;
 
@@ -78,6 +80,7 @@ export const useGame = create<GameStore>((set, get) => ({
   saving: false,
   lastSavedAt: null,
   saves: [],
+  legacySourceId: null,
   toasts: [],
   daysSinceSave: 0,
   live: null,
@@ -95,7 +98,7 @@ export const useGame = create<GameStore>((set, get) => ({
   async newGame(managerName, clubId, datasetId) {
     const ds = datasetId ? await datasetRepository.get(datasetId) : undefined;
     const world = createNewWorld({ managerName, clubId, importedPlayers: ds?.players });
-    set({ world, saveId: null, saveName: '', saveCreatedAt: null, clockSpeed: 'paused', live: null, liveRunning: false, daysSinceSave: 0 });
+    set({ world, saveId: null, legacySourceId: null, saveName: '', saveCreatedAt: null, clockSpeed: 'paused', live: null, liveRunning: false, daysSinceSave: 0 });
     await get().saveGame({ silent: true });
   },
 
@@ -107,16 +110,19 @@ export const useGame = create<GameStore>((set, get) => ({
 
   async loadGame(id) {
     try {
-      const save = await saveRepository.load(id);
-      if (!save) {
+      const loaded = await saveRepository.loadForPlay(id);
+      if (!loaded) {
         get().toast('세이브를 찾을 수 없습니다.', 'error');
         return false;
       }
+      const { save, legacy } = loaded;
       set({
         world: save.world,
-        saveId: save.id,
-        saveName: save.name,
-        saveCreatedAt: save.createdAt,
+        // 구버전: 원본 id를 쓰지 않으므로 다음 저장(자동 저장 포함)은 새 세이브로 만들어진다
+        saveId: legacy ? null : save.id,
+        saveName: legacy ? `${save.name} (이어하기)` : save.name,
+        saveCreatedAt: legacy ? null : save.createdAt,
+        legacySourceId: legacy ? save.id : null,
         lastSavedAt: save.updatedAt,
         clockSpeed: 'paused',
         live: save.world.liveMatch,
@@ -124,6 +130,7 @@ export const useGame = create<GameStore>((set, get) => ({
         daysSinceSave: 0,
       });
       prefs.setLastSaveId(save.id);
+      if (legacy) get().toast('구버전 세이브입니다. 원본은 그대로 보존하고, 저장하면 새 세이브로 이어집니다.', 'info');
       return true;
     } catch (e) {
       get().toast(`불러오기 실패: ${(e as Error).message}`, 'error');
@@ -159,13 +166,18 @@ export const useGame = create<GameStore>((set, get) => ({
   },
 
   async deleteSave(id) {
-    await saveRepository.remove(id);
+    try {
+      await saveRepository.remove(id);
+    } catch (e) {
+      get().toast((e as Error).message, 'error');
+      return;
+    }
     if (prefs.getLastSaveId() === id) prefs.setLastSaveId(null);
     await get().refreshSaves();
   },
 
   exitToTitle() {
-    set({ world: null, saveId: null, clockSpeed: 'paused', live: null, liveRunning: false });
+    set({ world: null, saveId: null, legacySourceId: null, clockSpeed: 'paused', live: null, liveRunning: false });
   },
 
   setClockSpeed(speed) {

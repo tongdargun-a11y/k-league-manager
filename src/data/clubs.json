@@ -1,0 +1,246 @@
+{
+ "_notice": "가상 세계관 데이터입니다. 솔레아 리그의 모든 구단·지명·경기장은 이 게임을 위해 만든 가상 설정이며 실제 구단과 무관합니다. 능력·평판·재정 수치는 게임용 값입니다.",
+ "sourceUpdatedAt": "2026-11-04",
+ "clubs": [
+  {
+   "id": "stormhaven",
+   "name": "스톰헤이븐 SC",
+   "shortName": "스톰헤이븐",
+   "city": "스톰헤이븐",
+   "stadium": "하버라이트 스타디움",
+   "founded": 1921,
+   "reputation": 85,
+   "colors": {
+    "primary": "#1e3a5f",
+    "secondary": "#f2c94c"
+   },
+   "nickname": "등대지기",
+   "capacity": 38000,
+   "financeTier": "S",
+   "fanBase": 280000,
+   "emblemConcept": "등대와 세 줄 파도",
+   "kitConcept": "네이비 바탕, 가슴에 노란 파도선",
+   "history": "조선소 노동자들이 만든 리그 최다 우승 명문."
+  },
+  {
+   "id": "lumina",
+   "name": "루미나 FC",
+   "shortName": "루미나",
+   "city": "루미나",
+   "stadium": "루미나 돔",
+   "founded": 2009,
+   "reputation": 81,
+   "colors": {
+    "primary": "#7c3aed",
+    "secondary": "#2dd4bf"
+   },
+   "nickname": "프리즘",
+   "capacity": 45000,
+   "financeTier": "S",
+   "fanBase": 220000,
+   "emblemConcept": "빛을 나누는 삼각 프리즘",
+   "kitConcept": "보라→민트 그라데이션",
+   "history": "IT 기업이 세운 신흥 부자 구단."
+  },
+  {
+   "id": "silvercrest",
+   "name": "실버크레스트 FC",
+   "shortName": "실버크레스트",
+   "city": "실버크레스트",
+   "stadium": "크라운 파크",
+   "founded": 1912,
+   "reputation": 83,
+   "colors": {
+    "primary": "#9ca3af",
+    "secondary": "#1d4ed8"
+   },
+   "nickname": "은빛 기사단",
+   "capacity": 40000,
+   "financeTier": "A",
+   "fanBase": 260000,
+   "emblemConcept": "기사 투구와 별 하나",
+   "kitConcept": "은색 바탕, 파란 어깨띠",
+   "history": "수도의 귀족적 전통 구단."
+  },
+  {
+   "id": "granitebridge",
+   "name": "그래닛브리지 AC",
+   "shortName": "그래닛",
+   "city": "그래닛브리지",
+   "stadium": "올드게이트 그라운드",
+   "founded": 1903,
+   "reputation": 78,
+   "colors": {
+    "primary": "#7f1d1d",
+    "secondary": "#e5e7eb"
+   },
+   "nickname": "돌다리",
+   "capacity": 30000,
+   "financeTier": "A",
+   "fanBase": 200000,
+   "emblemConcept": "아치형 돌다리",
+   "kitConcept": "버건디 바탕, 흰 칼라",
+   "history": "리그에서 가장 오래된 구단."
+  },
+  {
+   "id": "skyreach",
+   "name": "스카이리치 FC",
+   "shortName": "스카이",
+   "city": "스카이리치",
+   "stadium": "에어포트 아레나",
+   "founded": 1971,
+   "reputation": 74,
+   "colors": {
+    "primary": "#0d9488",
+    "secondary": "#f8fafc"
+   },
+   "nickname": "종이비행기",
+   "capacity": 28000,
+   "financeTier": "B",
+   "fanBase": 120000,
+   "emblemConcept": "종이비행기와 구름",
+   "kitConcept": "흰 바탕, 터키석 사선",
+   "history": "항공사가 창단한 빠른 측면 공격 팀."
+  },
+  {
+   "id": "windmere",
+   "name": "윈드미어 FC",
+   "shortName": "윈드미어",
+   "city": "윈드미어",
+   "stadium": "레이크사이드 스타디움",
+   "founded": 1949,
+   "reputation": 72,
+   "colors": {
+    "primary": "#7dd3fc",
+    "secondary": "#1e40af"
+   },
+   "nickname": "백조",
+   "capacity": 26000,
+   "financeTier": "B",
+   "fanBase": 110000,
+   "emblemConcept": "백조와 바람개비",
+   "kitConcept": "하늘색 단색, 남청 소매",
+   "history": "짧은 패스 철학을 고집하는 낭만파."
+  },
+  {
+   "id": "verdanta",
+   "name": "베르단타 FC",
+   "shortName": "베르단타",
+   "city": "베르단타",
+   "stadium": "그린필드 아레나",
+   "founded": 1958,
+   "reputation": 70,
+   "colors": {
+    "primary": "#4d7c0f",
+    "secondary": "#f5f0dc"
+   },
+   "nickname": "밀밭 군단",
+   "capacity": 24000,
+   "financeTier": "B",
+   "fanBase": 90000,
+   "emblemConcept": "밀 이삭과 풍차",
+   "kitConcept": "녹색·크림 반반",
+   "history": "리그 최고의 유소년 시스템."
+  },
+  {
+   "id": "emberforge",
+   "name": "엠버포지 FC",
+   "shortName": "엠버포지",
+   "city": "엠버포지",
+   "stadium": "볼케이노 피트",
+   "founded": 1966,
+   "reputation": 68,
+   "colors": {
+    "primary": "#b91c1c",
+    "secondary": "#d4a017"
+   },
+   "nickname": "불씨",
+   "capacity": 22000,
+   "financeTier": "B",
+   "fanBase": 80000,
+   "emblemConcept": "불씨를 품은 모루",
+   "kitConcept": "진홍 바탕, 금색 불꽃 무늬",
+   "history": "높은 압박과 뜨거운 홈 응원."
+  },
+  {
+   "id": "ironpeak",
+   "name": "아이언피크 유나이티드",
+   "shortName": "아이언",
+   "city": "아이언피크",
+   "stadium": "마인게이트 파크",
+   "founded": 1934,
+   "reputation": 64,
+   "colors": {
+    "primary": "#6b7280",
+    "secondary": "#ea580c"
+   },
+   "nickname": "광부들",
+   "capacity": 21000,
+   "financeTier": "C",
+   "fanBase": 60000,
+   "emblemConcept": "교차한 곡괭이와 봉우리",
+   "kitConcept": "회색 바탕, 주황 가로줄",
+   "history": "단단한 수비와 세트피스."
+  },
+  {
+   "id": "coralbay",
+   "name": "코랄베이 SC",
+   "shortName": "코랄베이",
+   "city": "코랄베이",
+   "stadium": "선셋 비치 그라운드",
+   "founded": 1977,
+   "reputation": 61,
+   "colors": {
+    "primary": "#fb7185",
+    "secondary": "#0e7490"
+   },
+   "nickname": "산호초",
+   "capacity": 18000,
+   "financeTier": "C",
+   "fanBase": 50000,
+   "emblemConcept": "산호와 바다거북",
+   "kitConcept": "코랄 바탕, 청록 물결",
+   "history": "공격 축구, 불안한 재정."
+  },
+  {
+   "id": "duneshire",
+   "name": "듄샤이어 FC",
+   "shortName": "듄샤이어",
+   "city": "듄샤이어",
+   "stadium": "오아시스 스타디움",
+   "founded": 1962,
+   "reputation": 59,
+   "colors": {
+    "primary": "#d6b370",
+    "secondary": "#9a3412"
+   },
+   "nickname": "대상",
+   "capacity": 20000,
+   "financeTier": "C",
+   "fanBase": 60000,
+   "emblemConcept": "오아시스 야자수와 초승달",
+   "kitConcept": "모래색 바탕, 테라코타 지그재그",
+   "history": "외국인 선수 비중이 큰 교역 도시 구단."
+  },
+  {
+   "id": "mossvale",
+   "name": "모스베일 타운",
+   "shortName": "모스베일",
+   "city": "모스베일",
+   "stadium": "우드랜드 그라운드",
+   "founded": 1988,
+   "reputation": 55,
+   "colors": {
+    "primary": "#166534",
+    "secondary": "#92400e"
+   },
+   "nickname": "고슴도치",
+   "capacity": 12000,
+   "financeTier": "D",
+   "fanBase": 20000,
+   "emblemConcept": "동그랗게 몸을 만 고슴도치",
+   "kitConcept": "녹색 바탕, 갈색 가시 패턴",
+   "history": "최근 승격한 리그 최소 언더독."
+  }
+ ]
+}

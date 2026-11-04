@@ -11,7 +11,7 @@ function finishSeason(): WorldState {
   w = simulateDueAIFixtures({ ...w, userClubId: '__none__' }, last);
   return checkSeasonEnd({ ...w, userClubId: TEST_ID });
 }
-const TEST_ID = 'ulsan';
+const TEST_ID = 'stormhaven';
 
 describe('시즌 넘기기', () => {
   const ended = finishSeason();
@@ -20,7 +20,7 @@ describe('시즌 넘기기', () => {
   });
   const next = startNextSeason(ended);
   it('새 시즌 일정·기록', () => {
-    expect(next.season.id).toBe('kleague1-2027');
+    expect(next.season.id).toBe('spd-2027');
     expect(next.season.status).toBe('active');
     expect(next.fixtures.every((f) => f.status === 'scheduled' && f.date >= '2027-02-16')).toBe(true);
     expect(next.history).toHaveLength(1);

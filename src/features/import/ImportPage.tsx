@@ -85,7 +85,7 @@ export function ImportPage() {
             <li>구단 ID: {TEST_CLUBS.map((c) => `${c.id}(${c.shortName})`).join(', ')}</li>
             <li>선택: nationality, birthDate(YYYY-MM-DD) 또는 age, shirtNumber, heightCm, weightKg, foot(left/right/both), ovr, potential, contractEnd, wage(주급, 만원), apps/goals/assists(실제 통산 기록), source(출처), sourceUpdatedAt(기준일)</li>
             <li>능력치 열(finishing, pace 등 25개)을 모두 넣으면 그대로 사용하고, 없으면 OVR에 맞춰 <b>게임용 추정치</b>를 만듭니다.</li>
-            <li>선수 사진은 가져오지 않습니다. 권리가 확인되지 않은 사진은 사용하지 않습니다.</li>
+            <li>선수 사진은 가져오지 않습니다. 실존 인물의 이름·사진은 넣지 마세요.</li>
           </ul>
         </details>
         {parseError && <p className="mt-3 flex items-center gap-2 text-sm text-rose-300"><AlertTriangle size={14} /> {parseError}</p>}
