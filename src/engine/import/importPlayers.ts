@@ -315,6 +315,6 @@ export function validateAndBuild(records: Record<string, string>[], opts: { club
 
 export const CSV_TEMPLATE = [
   'id,name,clubId,position,nationality,birthDate,shirtNumber,heightCm,foot,ovr,potential,contractEnd,apps,goals,assists,source,sourceUpdatedAt',
-  'sample-001,홍길동,ulsan,ST|LW,대한민국,1998-03-15,9,182,right,72,75,2027,120,35,12,직접 입력,2026-11-03',
-  'sample-002,김수비,seoul,CB,대한민국,1995-07-02,4,188,right,68,68,2026-12-31,,,,직접 입력,2026-11-03',
+  'sample-001,홍길동,stormhaven,ST|LW,대한민국,1998-03-15,9,182,right,72,75,2027,120,35,12,직접 입력,2026-11-03',
+  'sample-002,김수비,lumina,CB,대한민국,1995-07-02,4,188,right,68,68,2026-12-31,,,,직접 입력,2026-11-03',
 ].join('\n');

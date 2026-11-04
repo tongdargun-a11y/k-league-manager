@@ -49,7 +49,7 @@ describe('일정 생성', () => {
 });
 
 describe('OVR·포지션 적합도', () => {
-  const world = createNewWorld({ managerName: 'T', clubId: 'ulsan', seed: 1 });
+  const world = createNewWorld({ managerName: 'T', clubId: 'stormhaven', seed: 1 });
   const gk = Object.values(world.players).find((p) => p.positions[0] === 'GK')!;
   const st = Object.values(world.players).find((p) => p.positions[0] === 'ST')!;
   it('골키퍼는 GK OVR이 ST OVR보다 높다', () => {
@@ -63,7 +63,7 @@ describe('OVR·포지션 적합도', () => {
 
 describe('날짜 진행', () => {
   it('하루씩 진행되고, 사용자 경기일에 멈추며, 경기 전에는 더 진행되지 않는다', () => {
-    let w = createNewWorld({ managerName: 'T', clubId: 'seoul', seed: 7 });
+    let w = createNewWorld({ managerName: 'T', clubId: 'lumina', seed: 7 });
     let guard = 0;
     let r = advanceDay(w);
     while (r.stopReason !== 'match-day' && guard++ < 30) {
@@ -72,7 +72,7 @@ describe('날짜 진행', () => {
     }
     w = r.world;
     expect(r.stopReason).toBe('match-day');
-    const f = fixtureFor(w, w.clock.gameDate, 'seoul');
+    const f = fixtureFor(w, w.clock.gameDate, 'lumina');
     expect(f?.status).toBe('scheduled');
     const again = advanceDay(w);
     expect(again.advanced).toBe(false);
@@ -81,8 +81,8 @@ describe('날짜 진행', () => {
 });
 
 describe('경기 엔진', () => {
-  const world = createNewWorld({ managerName: 'T', clubId: 'jeonbuk', seed: 3 });
-  const fixture = world.fixtures.find((f) => f.homeClubId === 'jeonbuk' || f.awayClubId === 'jeonbuk')!;
+  const world = createNewWorld({ managerName: 'T', clubId: 'silvercrest', seed: 3 });
+  const fixture = world.fixtures.find((f) => f.homeClubId === 'silvercrest' || f.awayClubId === 'silvercrest')!;
 
   it('같은 시드면 같은 결과 (재현성)', () => {
     const a = simulateToEnd(prepareMatch(world, fixture), world.players);
@@ -108,7 +108,7 @@ describe('경기 엔진', () => {
 
   it('교체가 반영되고 횟수 제한이 지켜진다', () => {
     let s = prepareMatch(world, fixture);
-    const side = s.home.clubId === 'jeonbuk' ? 'home' : 'away';
+    const side = s.home.clubId === 'silvercrest' ? 'home' : 'away';
     s = stepMinute(s, world.players); // 킥오프
     for (let i = 0; i < 10; i++) s = stepMinute(s, world.players);
     const outId = s[side].slots.find((x) => x.position !== 'GK' && x.playerId)!.playerId!;
@@ -122,7 +122,7 @@ describe('경기 엔진', () => {
 
   it('전술 변경(포메이션)이 반영된다', () => {
     let s = prepareMatch(world, fixture);
-    const side = s.home.clubId === 'jeonbuk' ? 'home' : 'away';
+    const side = s.home.clubId === 'silvercrest' ? 'home' : 'away';
     s = changeTactic(s, side, { ...s[side].tactic, formation: '3-5-2', mentality: 'attacking' }, world.players);
     expect(s[side].tactic.formation).toBe('3-5-2');
     expect(s[side].slots.filter((x) => x.position === 'CB').length).toBe(3);
@@ -147,8 +147,8 @@ describe('경기 엔진', () => {
 
 describe('경기 결과 반영', () => {
   it('득점이 선수·구단·순위에 동기화되고, 두 번 반영해도 한 번만 반영된다', () => {
-    const world = createNewWorld({ managerName: 'T', clubId: 'pohang', seed: 11 });
-    const fixture = world.fixtures.find((f) => f.homeClubId === 'pohang' || f.awayClubId === 'pohang')!;
+    const world = createNewWorld({ managerName: 'T', clubId: 'granitebridge', seed: 11 });
+    const fixture = world.fixtures.find((f) => f.homeClubId === 'granitebridge' || f.awayClubId === 'granitebridge')!;
     const state = simulateToEnd(prepareMatch(world, fixture), world.players, { assistUser: true });
     const w1 = applyMatchResult(world, state);
     const w2 = applyMatchResult(w1, state);
@@ -176,7 +176,7 @@ describe('경기 결과 반영', () => {
 
 describe('시즌 전체 진행', () => {
   it('날짜를 끝까지 진행하면 모든 팀이 33경기를 치르고 시즌이 종료된다', () => {
-    let w = createNewWorld({ managerName: 'T', clubId: 'daegu', seed: 5 });
+    let w = createNewWorld({ managerName: 'T', clubId: 'mossvale', seed: 5 });
     let guard = 0;
     while (w.season.status !== 'finished' && guard++ < 400) {
       const r = advanceDay(w);

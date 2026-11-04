@@ -27,7 +27,7 @@ import { weekday } from '../utils/date';
 
 export const WORLD_SCHEMA_VERSION = 5;
 /**
- * 이 버전 이하로 저장된 세이브는 "구버전"(PHASE 0 이전, 실제 K리그 테스트 데이터 시절)이다.
+ * 이 버전 이하로 저장된 세이브는 "구버전"(PHASE 0 이전 데이터)이다.
  * 구버전 원본은 덮어쓰거나 삭제하지 않는다. (세이브 스키마 버전이며 IndexedDB(Dexie) 버전과는 별개)
  */
 export const LEGACY_MAX_SCHEMA_VERSION = 4;
@@ -42,7 +42,7 @@ export function createNewWorld(params: { managerName: string; clubId: string; se
   if (!clubs.some((c) => c.id === params.clubId)) throw new Error(`존재하지 않는 구단: ${params.clubId}`);
   const seed = params.seed ?? hashString(params.managerName + params.clubId) ^ 0x5bd1e995;
   const startDate = DEFAULT_START_DATE;
-  const seasonId = `kleague1-${DEFAULT_SEASON_YEAR}`;
+  const seasonId = `${TEST_COMPETITION.id}-${DEFAULT_SEASON_YEAR}`;
   const format = TEST_COMPETITION.format;
 
   const clubMap: Record<string, Club> = {};

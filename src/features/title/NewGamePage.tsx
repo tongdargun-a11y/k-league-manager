@@ -61,8 +61,12 @@ export function NewGamePage() {
         <h2 className="panel-title">2. 선수 데이터</h2>
         <div className="mt-2 flex flex-wrap items-center gap-3">
           <select className="input w-auto" value={datasetId} onChange={(e) => setDatasetId(e.target.value)} aria-label="선수 데이터">
-            <option value="">기본 테스트 데이터 (가상 선수)</option>
-            {datasets.map((d) => <option key={d.id} value={d.id}>{d.name} · {d.playerCount}명</option>)}
+            <option value="">기본 데이터 (가상 선수)</option>
+            {datasets.map((d) => {
+              // 현재 구단과 맞는 구단 id가 하나도 없으면 PHASE 0 이전에 만든 구버전 데이터셋 (삭제하지 않고 선택만 막음)
+              const legacy = !d.clubIds.some((id) => TEST_CLUBS.some((c) => c.id === id));
+              return <option key={d.id} value={d.id} disabled={legacy}>{d.name} · {d.playerCount}명{legacy ? ' (구버전 구단 데이터 · 사용 불가)' : ''}</option>;
+            })}
           </select>
           <Link to="/import" className="text-sm text-gold-400 underline">CSV/JSON 가져오기</Link>
         </div>

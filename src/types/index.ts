@@ -1,5 +1,5 @@
 // ─────────────────────────────────────────────────────────────
-// K-LEAGUE MANAGER 핵심 타입 정의
+// Virtual Football Manager 핵심 타입 정의
 // 모든 엔티티는 안정적인 id를 사용하며 이름을 키로 쓰지 않는다.
 // ─────────────────────────────────────────────────────────────
 
@@ -183,6 +183,14 @@ export interface Club {
   reputation: number;
   colors: ClubColors;
   crestAssetId: string | null;
+  // ── 가상 세계관 설정 (PHASE 0, 모두 선택 필드: 구버전 세이브에는 없음) ──
+  nickname?: string;
+  capacity?: number;
+  financeTier?: 'S' | 'A' | 'B' | 'C' | 'D';
+  fanBase?: number;
+  emblemConcept?: string;
+  kitConcept?: string;
+  history?: string;
   finances: {
     balance: number;
     transferBudget: number;

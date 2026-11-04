@@ -12,11 +12,11 @@ import type { SaveGame, WorldState } from '../types';
  * 샘플은 현재 월드에서 각 버전에 없던 필드를 빼서 합성한 것이다 (실제 사용자 세이브 아님).
  */
 function sample(version: 1 | 2 | 3 | 4, id = `legacy-v${version}`): SaveGame {
-  const w = createNewWorld({ managerName: '구감독', clubId: 'ulsan', seed: 3 });
+  const w = createNewWorld({ managerName: '구감독', clubId: 'stormhaven', seed: 3 });
   let world: Partial<WorldState> = w;
   if (version <= 2) { const { history: _h, ...rest } = world; void _h; world = rest; }
   if (version === 1) { const { finance: _f, transfers: _t, incomingOffers: _o, training: _tr, trainingReports: _r, ...rest } = world; void _f; void _t; void _o; void _tr; void _r; world = rest; }
-  return { id, schemaVersion: version, name: `구버전 v${version}`, createdAt: '2026-11-01T00:00:00Z', updatedAt: '2026-11-01T00:00:00Z', gameDate: w.clock.gameDate, managerName: '구감독', selectedClubId: 'ulsan', world: world as WorldState };
+  return { id, schemaVersion: version, name: `구버전 v${version}`, createdAt: '2026-11-01T00:00:00Z', updatedAt: '2026-11-01T00:00:00Z', gameDate: w.clock.gameDate, managerName: '구감독', selectedClubId: 'stormhaven', world: world as WorldState };
 }
 
 async function putRaw(save: SaveGame) {
@@ -95,15 +95,15 @@ describe('구버전 원본 보존 (DB)', () => {
     const item = (await saveRepository.list()).find((s) => s.id === 'list-v2')!;
     expect(item.legacy).toBe(true);
     expect(item.club?.name).toBeTruthy();
-    expect(item.club?.id).toBe('ulsan');
+    expect(item.club?.id).toBe('stormhaven');
   });
 
   it('새 게임 세이브는 구버전이 아니며 정상적으로 덮어쓰기·삭제된다', async () => {
-    await useGame.getState().newGame('새감독', 'seoul');
+    await useGame.getState().newGame('새감독', 'lumina');
     const id = useGame.getState().saveId!;
     const item = (await saveRepository.list()).find((s) => s.id === id)!;
     expect(item.legacy).toBe(false);
-    expect(item.club?.id).toBe('seoul');
+    expect(item.club?.id).toBe('lumina');
     await useGame.getState().saveGame({ silent: true });
     expect(useGame.getState().saveId).toBe(id);
     await saveRepository.remove(id);

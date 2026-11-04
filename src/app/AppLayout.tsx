@@ -66,7 +66,7 @@ export function AppLayout() {
     <div className="min-h-screen lg:grid lg:grid-cols-[232px_1fr]">
       {/* 데스크톱 사이드바 */}
       <aside className="hidden border-r border-navy-700 bg-navy-900 p-4 lg:sticky lg:top-0 lg:flex lg:h-screen lg:flex-col lg:overflow-y-auto">
-        <div className="mb-6 px-1 text-xs font-black tracking-[0.25em] text-gold-400">K-LEAGUE MANAGER</div>
+        <div className="mb-6 px-1 text-xs font-black tracking-[0.25em] text-gold-400">VIRTUAL FM</div>
         {clubHeader}
         {nav}
         <div className="mt-auto space-y-2 pt-6">
@@ -80,7 +80,7 @@ export function AppLayout() {
         <div className="fixed inset-0 z-40 bg-black/60 lg:hidden" onClick={() => setOpen(false)}>
           <aside className="h-full w-64 border-r border-navy-700 bg-navy-900 p-4" onClick={(e) => e.stopPropagation()}>
             <div className="mb-4 flex items-center justify-between">
-              <span className="text-xs font-black tracking-[0.25em] text-gold-400">K-LEAGUE MANAGER</span>
+              <span className="text-xs font-black tracking-[0.25em] text-gold-400">VIRTUAL FM</span>
               <button onClick={() => setOpen(false)} aria-label="메뉴 닫기" className="text-slate-400"><X size={20} /></button>
             </div>
             {clubHeader}

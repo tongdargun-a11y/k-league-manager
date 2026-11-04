@@ -8,8 +8,6 @@ import { Bar, EmptyState, Panel } from '../../components/ui';
 import { TestDataBadge } from '../../components/TestDataBadge';
 import { POSITIONS, FREE_AGENT, RETIRED, type Club } from '../../types';
 import { NegotiationPanel, OwnPlayerPanel } from '../transfers/PlayerActions';
-import { LocalImageButton } from '../images/LocalImageButton';
-import { playerImageKey } from '../../store/localImages';
 
 const FREE_AGENT_CLUB: Club = { id: FREE_AGENT, name: '무소속', shortName: '무소속', city: '-', stadium: '-', reputation: 0, colors: { primary: '#334155', secondary: '#1e293b' }, crestAssetId: null, finances: { balance: 0, transferBudget: 0, wageBudget: 0 }, meta: { sourceType: 'test', source: '', sourceUpdatedAt: '', licenseStatus: 'none', createdAt: '', updatedAt: '' } };
 import { formatShort } from '../../utils/date';
@@ -43,7 +41,7 @@ export function PlayerPage() {
       <div className="grid gap-4 lg:grid-cols-[minmax(0,380px)_1fr]">
         <div className="space-y-2">
           <PlayerCard player={player} club={club} career={career} gameDate={world.clock.gameDate} seasonLabel={(sid) => (sid === world.season.id ? world.season.label : sid)} clubName={(id) => world.clubs[id]?.shortName ?? '무소속'} />
-          <div className="flex items-center justify-center gap-2 text-xs text-slate-500">개인용 사진 (이 브라우저에만 저장) <LocalImageButton imageKey={playerImageKey(player.id)} label="사진" /></div>
+          {/* 개인용 사진 버튼은 숨김 (PHASE 0). 코드: ../images/LocalImageButton */}
         </div>
         <div className="space-y-4">
           <Panel title="상태">

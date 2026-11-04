@@ -85,9 +85,9 @@ export function SavesPage() {
         <p className="text-sm leading-relaxed text-slate-300">{DATA_NOTICE}</p>
         <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-slate-400">
           <li>선수 이름은 무작위 조합으로 생성한 가상 인물이며 실존 선수와 무관합니다.</li>
-          <li>선수 사진은 권리가 확인된 파일만 사용합니다. 현재는 포지션별 기본 실루엣을 표시합니다.</li>
-          <li>일정과 대회 규칙은 테스트용 설정(src/data/index.ts)이며 실제 시즌 일정과 다릅니다.</li>
-          <li>직접 확보한 선수 데이터는 타이틀 화면의 'CSV/JSON 가져오기'로 데이터셋을 만든 뒤 새 게임에서 선택할 수 있습니다. (진행 중인 세이브에는 적용되지 않습니다)</li>
+          <li>구단·선수·지명은 모두 가상입니다. 선수 그림은 현재 기본 실루엣이며, 픽셀 캐릭터로 바뀔 예정입니다.</li>
+          <li>일정과 대회 규칙은 게임 설정값(src/data/index.ts)입니다.</li>
+          <li>직접 만든 가상 선수 데이터는 타이틀 화면의 'CSV/JSON 가져오기'로 데이터셋을 만든 뒤 새 게임에서 선택할 수 있습니다. (진행 중인 세이브에는 적용되지 않습니다)</li>
         </ul>
       </Panel>
     </div>

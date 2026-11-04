@@ -1,10 +1,11 @@
-import clubsJson from './clubs.test.json';
+import clubsJson from './clubs.json';
 import type { Club, Competition, CompetitionFormat } from '../types';
 
 export const DATA_NOTICE = clubsJson._notice;
 
 export const TEST_CLUBS: Club[] = clubsJson.clubs.map((c) => ({
   ...c,
+  financeTier: c.financeTier as Club['financeTier'],
   crestAssetId: null,
   finances: {
     balance: Math.round(c.reputation * 18) * 100,
@@ -13,9 +14,9 @@ export const TEST_CLUBS: Club[] = clubsJson.clubs.map((c) => ({
   },
   meta: {
     sourceType: 'test',
-    source: 'src/data/clubs.test.json',
+    source: 'src/data/clubs.json',
     sourceUpdatedAt: clubsJson.sourceUpdatedAt,
-    licenseStatus: 'unverified',
+    licenseStatus: 'none',
     createdAt: clubsJson.sourceUpdatedAt,
     updatedAt: clubsJson.sourceUpdatedAt,
   },
@@ -41,13 +42,13 @@ export const TEST_FORMAT: CompetitionFormat = {
   minSquadSize: 18,
   maxSquadSize: 32,
   maxForeignPlayers: 6,
-  description: '테스트용 규칙: 12팀 3회전(33라운드) 리그. 파이널 라운드(스플릿)는 아직 미구현. 이적시장 기간·외국인 수 등도 테스트용 설정입니다.',
+  description: '솔레아 프리미어 디비전: 12팀 3회전(33라운드) 리그. 이적시장 기간·외국인 수 등은 게임 설정값입니다.',
 };
 
 export const TEST_COMPETITION: Competition = {
-  id: 'kleague1',
-  name: 'K리그1 (테스트 시즌)',
-  shortName: 'K리그1',
+  id: 'spd',
+  name: '솔레아 프리미어 디비전',
+  shortName: '솔레아 리그',
   format: TEST_FORMAT,
 };
 

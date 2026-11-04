@@ -4,8 +4,8 @@ import { createNewWorld } from '../engine/world';
 import type { SaveGame } from '../types';
 
 function legacySave(id: string, schemaVersion: number): SaveGame {
-  const world = createNewWorld({ managerName: 'T', clubId: 'ulsan', seed: 1 });
-  return { id, schemaVersion, name: id, createdAt: '2026-01-01', updatedAt: '2026-01-02', gameDate: world.clock.gameDate, managerName: 'T', selectedClubId: 'ulsan', world };
+  const world = createNewWorld({ managerName: 'T', clubId: 'stormhaven', seed: 1 });
+  return { id, schemaVersion, name: id, createdAt: '2026-01-01', updatedAt: '2026-01-02', gameDate: world.clock.gameDate, managerName: 'T', selectedClubId: 'stormhaven', world };
 }
 
 describe('전체 백업 (0-A1)', () => {

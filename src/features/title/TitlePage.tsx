@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FileUp, FolderOpen, ImagePlus, Play, Plus, Trash2 } from 'lucide-react';
+import { FileUp, FolderOpen, Play, Plus, Trash2 } from 'lucide-react';
 import { useGame } from '../../store/gameStore';
 import { prefs } from '../../repositories/saveRepository';
 import { DATA_NOTICE } from '../../data';
@@ -32,9 +32,9 @@ export function TitlePage() {
     <div className="flex min-h-screen items-center justify-center p-4">
       <div className="w-full max-w-xl">
         <div className="mb-8 text-center">
-          <div className="text-xs font-semibold tracking-[0.4em] text-gold-400">FOOTBALL CLUB MANAGEMENT</div>
-          <h1 className="mt-2 text-4xl font-black tracking-tight text-white sm:text-5xl">K-LEAGUE <span className="text-gold-400">MANAGER</span></h1>
-          <div className="mt-3 flex justify-center"><TestDataBadge text="개발 버전 · 테스트 데이터" /></div>
+          <div className="text-xs font-semibold tracking-[0.4em] text-gold-400">SOLEA PREMIER DIVISION</div>
+          <h1 className="mt-2 text-4xl font-black tracking-tight text-white sm:text-5xl">VIRTUAL <span className="text-gold-400">FOOTBALL MANAGER</span></h1>
+          <div className="mt-3 flex justify-center"><TestDataBadge text="개발 버전 · 가상 세계관" /></div>
         </div>
 
         <div className="panel space-y-3 p-5">
@@ -47,11 +47,9 @@ export function TitlePage() {
             <Plus size={18} /> 새 게임
           </button>
           <button className="btn-ghost w-full" onClick={() => navigate('/import')}>
-            <FileUp size={16} /> 선수 데이터 가져오기 (CSV/JSON)
+            <FileUp size={16} /> 선수 데이터 편집·가져오기 (CSV/JSON)
           </button>
-          <button className="btn-ghost w-full" onClick={() => navigate('/images')}>
-            <ImagePlus size={16} /> 개인용 로고·사진
-          </button>
+          {/* 개인용 로고·사진 메뉴는 숨김 (PHASE 0: 픽셀 캐릭터로 대체 예정, /images 화면 코드는 유지) */}
         </div>
 
         <div className="panel mt-4 p-5">
