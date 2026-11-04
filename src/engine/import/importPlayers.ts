@@ -7,6 +7,7 @@ import type { AttributeKey, Club, Foot, Player, PlayerAttributes, Position } fro
 import { POSITIONS } from '../../types';
 import { clamp, ovrForPosition } from '../ratings/ovr';
 import { createRng, hashString } from '../../utils/rng';
+import { koreanizeName } from '../../data/testPlayers';
 
 export interface ImportIssue {
   row: number; // 1부터 (헤더 제외한 데이터 행 번호)
@@ -275,10 +276,15 @@ export function validateAndBuild(records: Record<string, string>[], opts: { club
     const sourceUpdatedAt = (r.sourceUpdatedAt ?? '').trim() || opts.today;
     perClub[clubId] = (perClub[clubId] ?? 0) + 1;
 
+    // 화면에는 한글 이름만 노출: 영문 이름은 아는 단어를 한글로 바꾸고, 원문은 nameEn에 보관
+    const hasHangul = /[가-힣]/.test(name);
+    const displayName = hasHangul ? name : koreanizeName(name);
+    if (!/[가-힣]/.test(displayName)) warn('name', `'${name}': 한글 표기를 찾지 못했습니다. 한글 이름으로 입력해 주세요.`);
+
     players.push({
       id: `imp-${id}`,
-      name,
-      nameEn: r.nameEn || undefined,
+      name: displayName,
+      nameEn: r.nameEn || (hasHangul ? undefined : name),
       nationality: (r.nationality ?? '').trim() || '대한민국',
       birthDate,
       heightCm: height ?? undefined,

@@ -181,3 +181,11 @@ describe('주급', () => {
     for (const c of Object.values(w.clubs)) expect(weeklyWageBill(c.id, w.players)).toBeLessThanOrEqual(c.finances.wageBudget);
   });
 });
+
+describe('가져오기 이름 한글화', () => {
+  it('영문 이름은 아는 단어를 한글로 바꾸고 원문은 nameEn에 보관한다', () => {
+    const r = validateAndBuild(parseInput('[{"id":"e","name":"Lucas Moreira","club":"stormhaven","position":"ST","ovr":60}]', 'e.json').records, { clubs: TEST_CLUBS, fileName: 'e.json', today: '2026-11-04', seasonYear: 2026 });
+    expect(r.players[0].name).toBe('루카스 모레이라');
+    expect(r.players[0].nameEn).toBe('Lucas Moreira');
+  });
+});
