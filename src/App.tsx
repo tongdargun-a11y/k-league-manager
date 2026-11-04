@@ -12,6 +12,7 @@ import { MatchPage } from './features/match/MatchPage';
 import { SavesPage } from './features/saves/SavesPage';
 import { TransfersPage } from './features/transfers/TransfersPage';
 import { FinancePage } from './features/finance/FinancePage';
+import { FacilitiesPage } from './features/club/FacilitiesPage';
 import { TrainingPage } from './features/training/TrainingPage';
 import { ImportPage } from './features/import/ImportPage';
 import { LocalImagesPage } from './features/images/LocalImagesPage';
@@ -37,6 +38,7 @@ export default function App() {
             <Route path="match" element={<MatchPage />} />
             <Route path="transfers" element={<TransfersPage />} />
             <Route path="finance" element={<FinancePage />} />
+            <Route path="club" element={<FacilitiesPage />} />
             <Route path="training" element={<TrainingPage />} />
             <Route path="saves" element={<SavesPage />} />
           </Route>

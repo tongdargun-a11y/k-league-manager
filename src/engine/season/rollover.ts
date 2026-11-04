@@ -1,3 +1,4 @@
+import { clubState, youthBonus } from '../club/facilities';
 import type { Club, Fixture, Player, PlayerAttributes, Position, SeasonRecord, WorldState } from '../../types';
 import { RETIRED } from '../../types';
 import { generateFixtures } from '../calendar/schedule';
@@ -8,6 +9,7 @@ import { clamp, ovrForPosition, playerOvr } from '../ratings/ovr';
 import { ageOn } from '../../utils/date';
 import { createRng, hashString, type Rng } from '../../utils/rng';
 import { koreanName, makeAttributes, tuneToOvr } from '../../data/testPlayers';
+import { HOME_NATION } from '../../data';
 
 const PHYSICAL: (keyof PlayerAttributes)[] = ['pace', 'acceleration', 'stamina', 'strength', 'jumping'];
 const YOUTH_POSITIONS: Position[][] = [['ST'], ['CM', 'DM'], ['CB'], ['LW', 'LM'], ['RB', 'CB'], ['GK'], ['AM', 'CM'], ['RW', 'RM']];
@@ -62,11 +64,11 @@ export function retireChance(p: Player, on: string): number {
   return clamp(base + (ovr < 55 ? 0.2 : 0) - (ovr > 70 ? 0.15 : 0), 0, 1);
 }
 
-function makeYouth(club: Club, rng: Rng, idx: number, year: number, usedNumbers: Set<number>): Player {
+function makeYouth(club: Club, rng: Rng, idx: number, year: number, usedNumbers: Set<number>, bonus = 0): Player {
   const positions = YOUTH_POSITIONS[idx % YOUTH_POSITIONS.length];
   const pos = positions[0];
   const age = rng.int(17, 19);
-  const target = clamp(Math.round(42 + (club.reputation - 65) * 0.3 + rng.int(0, 8)), 38, 60);
+  const target = clamp(Math.round(42 + (club.reputation - 65) * 0.3 + rng.int(0, 8)) + bonus, 38, 66);
   const attributes = tuneToOvr(makeAttributes(rng, pos, target), pos, target);
   const ovr = ovrForPosition(attributes, pos);
   let shirt = 40;
@@ -76,7 +78,7 @@ function makeYouth(club: Club, rng: Rng, idx: number, year: number, usedNumbers:
   return {
     id: `${club.id}-y${year}-${idx + 1}`,
     name: koreanName(rng),
-    nationality: '대한민국',
+    nationality: HOME_NATION,
     birthDate: `${year - age}-${String(rng.int(1, 12)).padStart(2, '0')}-${String(rng.int(1, 28)).padStart(2, '0')}`,
     heightCm: pos === 'GK' || pos === 'CB' ? rng.int(182, 192) : rng.int(168, 185),
     weightKg: rng.int(60, 80),
@@ -86,7 +88,7 @@ function makeYouth(club: Club, rng: Rng, idx: number, year: number, usedNumbers:
     clubId: club.id,
     contract: { startDate: today, endDate: `${year + 2}-12-31`, wage: 30 + rng.int(0, 30) },
     attributes,
-    potential: clamp(ovr + rng.int(10, 30), ovr, 90),
+    potential: clamp(ovr + rng.int(10, 30) + Math.round(bonus * 0.7), ovr, 92),
     peakOvr: ovr,
     photoAssetId: null,
     status: { fitness: 100, condition: 70, morale: 75, sharpness: 50, injuryId: null, yellowCards: 0, suspendedMatches: 0 },
@@ -130,7 +132,8 @@ export function startNextSeason(world: WorldState): WorldState {
     const isUser = club.id === world.userClubId;
     const n = Math.min(world.competition.format.maxSquadSize - squad.length, isUser ? 2 : Math.max(2, AI_MIN_SQUAD - squad.length));
     for (let i = 0; i < n; i++) {
-      const y = makeYouth(club, rng, i, year, used);
+      const cst = isUser ? clubState(world) : null;
+      const y = makeYouth(club, rng, i, year, used, cst ? youthBonus(cst) : 0);
       players[y.id] = y;
       if (isUser) youthUser.push(`${y.name}(${y.positions[0]})`);
     }

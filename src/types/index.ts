@@ -138,6 +138,14 @@ export interface Player {
   appearance?: PlayerAppearance;
 }
 
+export type FacilityKind = 'stadium' | 'training' | 'youth';
+/** 구단운영 모드 전용 상태 (PHASE 2). 시설 레벨 1~5, 팬 만족도 0~100 */
+export interface ClubModeState {
+  kind: 'club';
+  facilities: Record<FacilityKind, number>;
+  fanSatisfaction: number;
+}
+
 export interface PlayerAppearance {
   v: 1;
   body: number;
@@ -421,7 +429,7 @@ export interface GameClock {
 
 export type FinanceCategory =
   | 'gate' | 'broadcast' | 'sponsor' | 'prize' | 'transfer-in'
-  | 'wages' | 'operations' | 'transfer-out' | 'compensation';
+  | 'wages' | 'operations' | 'transfer-out' | 'compensation' | 'facility';
 
 export interface FinanceTx {
   id: string;
@@ -488,6 +496,7 @@ export type GameMode = 'club' | 'manager' | 'player';
 
 export interface WorldState {
   /** 플레이 모드 (PHASE 1~). 세이브마다 독립 */
+  modeState?: ClubModeState;
   mode?: GameMode;
   /** 새 게임마다 만드는 월드 식별자 (추적·표시용) */
   worldId?: string;

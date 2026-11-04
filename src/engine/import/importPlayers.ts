@@ -8,6 +8,7 @@ import { POSITIONS } from '../../types';
 import { clamp, ovrForPosition } from '../ratings/ovr';
 import { createRng, hashString } from '../../utils/rng';
 import { koreanizeName } from '../../data/testPlayers';
+import { HOME_NATION } from '../../data';
 
 export interface ImportIssue {
   row: number; // 1부터 (헤더 제외한 데이터 행 번호)
@@ -285,7 +286,7 @@ export function validateAndBuild(records: Record<string, string>[], opts: { club
       id: `imp-${id}`,
       name: displayName,
       nameEn: r.nameEn || (hasHangul ? undefined : name),
-      nationality: (r.nationality ?? '').trim() || '대한민국',
+      nationality: (r.nationality ?? '').trim() || HOME_NATION,
       birthDate,
       heightCm: height ?? undefined,
       weightKg: weight ?? undefined,
@@ -321,6 +322,6 @@ export function validateAndBuild(records: Record<string, string>[], opts: { club
 
 export const CSV_TEMPLATE = [
   'id,name,clubId,position,nationality,birthDate,shirtNumber,heightCm,foot,ovr,potential,contractEnd,apps,goals,assists,source,sourceUpdatedAt',
-  'sample-001,홍길동,stormhaven,ST|LW,대한민국,1998-03-15,9,182,right,72,75,2027,120,35,12,직접 입력,2026-11-03',
-  'sample-002,김수비,lumina,CB,대한민국,1995-07-02,4,188,right,68,68,2026-12-31,,,,직접 입력,2026-11-03',
+  'sample-001,홍길동,stormhaven,ST|LW,솔레아,1998-03-15,9,182,right,72,75,2027,120,35,12,직접 입력,2026-11-03',
+  'sample-002,김수비,lumina,CB,솔레아,1995-07-02,4,188,right,68,68,2026-12-31,,,,직접 입력,2026-11-03',
 ].join('\n');

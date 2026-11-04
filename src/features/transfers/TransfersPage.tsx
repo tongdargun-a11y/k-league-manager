@@ -1,3 +1,4 @@
+import { capsOf } from '../../engine/modes';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, X } from 'lucide-react';
@@ -109,7 +110,7 @@ export function TransfersPage() {
                       <div><b className="text-white">{world.clubs[o.fromClubId].shortName}</b> → <Link to={`/game/player/${p.id}`} className="text-gold-300 hover:underline">{p.name}</Link> ({p.positions[0]}, OVR {playerOvr(p)})</div>
                       <div className="text-xs text-slate-400">제안 {formatMoney(o.fee)} · 시장 가치 {formatMoney(marketValue(p, today))} · {formatShort(o.date)} ~ {formatShort(o.expiresOn)}</div>
                     </div>
-                    {o.status === 'pending' ? (
+                    {o.status === 'pending' && capsOf(world).transferDirect ? (
                       <div className="flex gap-2">
                         <button className="btn-gold px-3 py-1.5" onClick={() => {
                           if (!window.confirm(`${p.name} 선수를 ${formatMoney(o.fee)}에 ${world.clubs[o.fromClubId].name}(으)로 보낼까요? 되돌릴 수 없습니다.`)) return;

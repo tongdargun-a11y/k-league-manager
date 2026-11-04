@@ -6,6 +6,7 @@ import type { Club, FinanceCategory, FinanceTx, GameDate, Player, WorldState } f
 import { FREE_AGENT } from '../../types';
 
 export const CATEGORY_LABEL: Record<FinanceCategory, string> = {
+  facility: '시설 투자',
   gate: '입장 수입',
   broadcast: '중계권',
   sponsor: '스폰서',

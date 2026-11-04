@@ -66,5 +66,10 @@ export function competitionFor(length: SeasonLength = 'long'): Competition {
   };
 }
 
+/** 가상 국가. 자국 = 솔레아. 구버전 세이브의 '대한민국'도 자국으로 취급한다(세이브는 바꾸지 않음). */
+export const HOME_NATION = '솔레아';
+export const LEGACY_HOME_NATIONS = ['대한민국'];
+export const isHomeNation = (n: string) => n === HOME_NATION || LEGACY_HOME_NATIONS.includes(n);
+
 export const DEFAULT_SEASON_YEAR = 2026;
 export const DEFAULT_START_DATE = '2026-02-16';
