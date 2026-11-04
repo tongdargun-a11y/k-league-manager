@@ -283,7 +283,8 @@ export function processTransferDay(world: WorldState, date: GameDate): WorldStat
       if (fee <= buyer.finances.transferBudget) {
         const offer: IncomingOffer = { id: `offer-${date}-${target.id}`, playerId: target.id, fromClubId: buyer.id, fee, date, expiresOn: addDays(date, 7), status: 'pending' };
         w = { ...w, incomingOffers: [offer, ...w.incomingOffers].slice(0, 60) };
-        w = addInbox(w, { kind: 'info', title: `이적 제안: ${target.name}`, body: `${buyer.name}이(가) ${target.name} 선수에게 ${formatShortMoney(fee)}을 제안했습니다. 이적시장 화면에서 7일 안에 답하세요.` });
+        if (w.mode === 'manager') w = boardDecideOffer(w, offer.id);
+        else w = addInbox(w, { kind: 'info', title: `이적 제안: ${target.name}`, body: `${buyer.name}이(가) ${target.name} 선수에게 ${formatShortMoney(fee)}을 제안했습니다. 이적시장 화면에서 7일 안에 답하세요.` });
       }
     }
   }
@@ -303,4 +304,45 @@ export function processContracts(world: WorldState, date: GameDate): WorldState 
     }
   }
   return w;
+}
+
+// ───────────────────────── 감독 모드: 이사회 요청 (PHASE 2) ─────────────────────────
+
+/**
+ * 감독이 영입을 요청하면 이사회가 바로 판단한다.
+ * 판매 구단의 요구 이적료(역제안 포함)·선수 요구 주급(2년)으로 협상하고, 예산·인원 규정을 넘으면 거절한다.
+ */
+export function boardRequestSigning(world: WorldState, playerId: string): { world: WorldState; ok: boolean; message: string } {
+  const p = world.players[playerId];
+  if (!p) return { world, ok: false, message: '선수를 찾을 수 없습니다.' };
+  const today = world.clock.gameDate;
+  let fee = 0;
+  if (p.clubId !== FREE_AGENT) {
+    const r = evaluateBid(world, playerId, roundMoney(marketValue(p, today)));
+    if (r.kind === 'reject') return { world, ok: false, message: `이사회: 상대 구단이 거절했습니다. (${r.message})` };
+    fee = r.fee;
+  }
+  const wage = wageDemand(p, today, world.clubs[world.userClubId].reputation);
+  const chk = canSign(world, playerId, fee, wage);
+  if (!chk.ok) return { world, ok: false, message: `이사회: 영입 요청을 거절했습니다. ${chk.reason ?? ''}`.trim() };
+  const c = evaluateContract(world, playerId, wage, 2, world.userClubId);
+  if (!c.ok) return { world, ok: false, message: `이사회: 선수와 계약 합의에 실패했습니다. (${c.message})` };
+  let w = executeTransfer(world, { playerId, toClubId: world.userClubId, fee, wage, years: 2 });
+  const message = `이사회가 ${p.name} 영입을 승인했습니다. 이적료 ${fee ? formatShortMoney(fee) : '없음'}, 주급 ${wage.toLocaleString()}만 원, 2년 계약.`;
+  w = addInbox(w, { kind: 'info', title: `영입 승인: ${p.name}`, body: message });
+  return { world: w, ok: true, message };
+}
+
+/** 감독 모드에서 받은 이적 제안은 이사회가 결정 (시장 가치의 115% 이상이면 수락) */
+function boardDecideOffer(world: WorldState, offerId: string): WorldState {
+  const o = world.incomingOffers.find((x) => x.id === offerId);
+  if (!o) return world;
+  const p = world.players[o.playerId];
+  const buyer = world.clubs[o.fromClubId];
+  if (o.fee >= marketValue(p, world.clock.gameDate) * 1.15) {
+    const w = acceptIncomingOffer(world, offerId);
+    return addInbox(w, { kind: 'info', title: `이사회 결정: ${p.name} 이적`, body: `이사회가 ${buyer.name}의 ${formatShortMoney(o.fee)} 제안을 수락해 ${p.name} 선수가 떠났습니다.` });
+  }
+  const w = rejectIncomingOffer(world, offerId);
+  return addInbox(w, { kind: 'info', title: `이사회 결정: ${p.name} 잔류`, body: `이사회가 ${buyer.name}의 ${formatShortMoney(o.fee)} 제안을 거절했습니다.` });
 }
