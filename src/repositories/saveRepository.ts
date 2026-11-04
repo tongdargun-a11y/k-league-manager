@@ -4,6 +4,7 @@ import { WORLD_SCHEMA_VERSION } from '../engine/world';
 import { migrateSave } from './migrations';
 import { uid } from '../utils/id';
 import type { PlayerDataset } from '../engine/import/importPlayers';
+import { buildBackup, type BackupFile, type BackupImage } from './backup';
 
 /**
  * IndexedDB 세이브 저장소 (Dexie).
@@ -46,6 +47,35 @@ export interface LocalImage {
 }
 
 const db = new SaveDB();
+
+function blobToDataUrl(blob: Blob): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader();
+    r.onload = () => resolve(r.result as string);
+    r.onerror = () => reject(r.error);
+    r.readAsDataURL(blob);
+  });
+}
+
+/** 전체 백업: 읽기만 하며 어떤 테이블도 수정하지 않는다. */
+export const backupRepository = {
+  async counts() {
+    const [saves, datasets, images] = await Promise.all([db.saves.count(), db.datasets.count(), db.images.count()]);
+    return { saves, datasets, images };
+  },
+  async exportAll(opts: { includeImages: boolean }): Promise<BackupFile> {
+    return db.transaction('r', db.saves, db.datasets, db.images, async () => {
+      const saves = await db.saves.toArray(); // 원본 그대로 (migrateSave 하지 않음)
+      const datasets = await db.datasets.toArray();
+      let images: BackupImage[] = [];
+      if (opts.includeImages) {
+        const rows = await db.images.toArray();
+        images = await Promise.all(rows.map(async (r) => ({ key: r.key, dataUrl: await blobToDataUrl(r.blob), updatedAt: r.updatedAt })));
+      }
+      return buildBackup({ saves, datasets, images, appSaveSchemaVersion: WORLD_SCHEMA_VERSION, dbVersion: db.verno });
+    });
+  },
+};
 
 export const imageRepository = {
   all: () => db.images.toArray(),

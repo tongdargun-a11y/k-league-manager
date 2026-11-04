@@ -7,6 +7,7 @@ import { TEST_CLUBS, DATA_NOTICE } from '../../data';
 import { formatKorean } from '../../utils/date';
 import { ClubBadge } from '../../components/ClubBadge';
 import { TestDataBadge } from '../../components/TestDataBadge';
+import { BackupPanel } from '../backup/BackupPanel';
 
 export function TitlePage() {
   const navigate = useNavigate();
@@ -76,6 +77,10 @@ export function TitlePage() {
               })}
             </ul>
           )}
+        </div>
+        <div className="panel mt-4 p-5">
+          <h2 className="panel-title mb-3">데이터 백업</h2>
+          <BackupPanel />
         </div>
         <p className="mt-4 text-center text-xs leading-relaxed text-slate-500">{DATA_NOTICE}</p>
       </div>

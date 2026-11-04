@@ -7,6 +7,7 @@ import { ClubBadge } from '../../components/ClubBadge';
 import { formatKorean } from '../../utils/date';
 import { DATA_NOTICE } from '../../data';
 import { WORLD_SCHEMA_VERSION } from '../../engine/world';
+import { BackupPanel } from '../backup/BackupPanel';
 
 export function SavesPage() {
   const world = useWorld();
@@ -49,6 +50,10 @@ export function SavesPage() {
         </div>
         <p className="mt-2 text-xs text-slate-400">마지막 저장: {lastSavedAt ? new Date(lastSavedAt).toLocaleString('ko-KR') : '없음'} · 세이브 버전 v{WORLD_SCHEMA_VERSION}</p>
         <p className="mt-1 text-xs text-slate-500">자동 저장 시점: 새 게임 생성, 날짜 진행 7일마다, 날짜 진행 정지·경기일 도착·이적 제안 도착, 킥오프·하프타임, 경기 결과 반영 후. 저장은 브라우저(IndexedDB)에만 되며 다른 기기와 공유되지 않습니다.</p>
+      </Panel>
+
+      <Panel title="전체 데이터 백업">
+        <BackupPanel />
       </Panel>
 
       <Panel title="세이브 목록">
