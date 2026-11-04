@@ -146,6 +146,12 @@ export interface ClubModeState {
   fanSatisfaction: number;
 }
 
+/** 선수 모드 전용 상태 (PHASE 3). 내 선수는 players에 일반 선수와 같이 저장된다. */
+export interface PlayerModeState {
+  kind: 'player';
+  userPlayerId: string;
+}
+
 export interface PlayerAppearance {
   v: 1;
   body: number;
@@ -496,7 +502,7 @@ export type GameMode = 'club' | 'manager' | 'player';
 
 export interface WorldState {
   /** 플레이 모드 (PHASE 1~). 세이브마다 독립 */
-  modeState?: ClubModeState;
+  modeState?: ClubModeState | PlayerModeState;
   mode?: GameMode;
   /** 새 게임마다 만드는 월드 식별자 (추적·표시용) */
   worldId?: string;

@@ -1,8 +1,10 @@
+import { userPlayerOf } from '../../engine/player/userPlayer';
+import { playerOvr } from '../../engine/ratings/ovr';
 import { Link, useNavigate } from 'react-router-dom';
 import { capsOf } from '../../engine/modes';
 import { AlertTriangle, Bell, CalendarClock, HeartPulse, Swords, Trophy } from 'lucide-react';
 import { useGame, useWorld } from '../../store/gameStore';
-import { fixtureFor, nextFixture, standingsOf } from '../../engine/world';
+import { fixtureFor, nextFixture, seasonStatsKey, standingsOf } from '../../engine/world';
 import { validateLineup } from '../../engine/match/lineup';
 import { startNextSeason } from '../../engine/season/rollover';
 import { ClubBadge } from '../../components/ClubBadge';
@@ -30,6 +32,8 @@ export function DashboardPage() {
   const myPlayers = Object.values(world.players).filter((p) => p.clubId === clubId);
   const injured = myPlayers.filter((p) => p.status.injuryId);
   const suspended = myPlayers.filter((p) => p.status.suspendedMatches > 0);
+  const me = userPlayerOf(world);
+  const myStats = me ? world.seasonStats[seasonStatsKey(world.season.id, me.id, me.clubId)] : undefined;
   const lineupErrors = validateLineup(world.userLineup, world.players, world.competition.format.benchSize).filter((i) => i.level === 'error');
 
   const onStart = () => {
@@ -72,7 +76,11 @@ export function DashboardPage() {
         <Panel className="md:col-span-1"><Stat label="게임 날짜" value={<span className="text-lg">{formatKorean(world.clock.gameDate)}</span>} sub={world.season.label} /></Panel>
         <Panel><Stat label="리그 순위" value={`${myRank}위`} sub={`${myRow.points}점 · ${myRow.won}승 ${myRow.drawn}무 ${myRow.lost}패`} /></Panel>
         <Panel><Stat label="득실" value={`${myRow.goalsFor} : ${myRow.goalsAgainst}`} sub={`골득실 ${myRow.goalDifference > 0 ? '+' : ''}${myRow.goalDifference}`} /></Panel>
-        <Panel><Stat label="감독 통산" value={`${world.manager.record.won}-${world.manager.record.drawn}-${world.manager.record.lost}`} sub={`${world.manager.record.played}경기 · 우승 ${world.manager.record.trophies}회`} /></Panel>
+        {me ? (
+          <Panel><Link to={`/game/player/${me.id}`}><Stat label={`내 선수 · ${me.name}`} value={`OVR ${playerOvr(me)}`} sub={`잠재력 ${me.potential} · 이번 시즌 ${myStats?.appearances ?? 0}경기 ${myStats?.goals ?? 0}골`} /></Link></Panel>
+        ) : (
+          <Panel><Stat label="감독 통산" value={`${world.manager.record.won}-${world.manager.record.drawn}-${world.manager.record.lost}`} sub={`${world.manager.record.played}경기 · 우승 ${world.manager.record.trophies}회`} /></Panel>
+        )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">

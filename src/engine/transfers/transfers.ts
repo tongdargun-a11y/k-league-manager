@@ -272,7 +272,7 @@ export function processTransferDay(world: WorldState, date: GameDate): WorldStat
 
   // AI → 사용자 선수 제안 (하루 8% 확률, 대기 제안 2개 이하일 때)
   const pending = w.incomingOffers.filter((o) => o.status === 'pending').length;
-  if (pending < 2 && rng.chance(0.08)) {
+  if (w.mode !== 'player' && pending < 2 && rng.chance(0.08)) {
     const mine = squadOf(w, w.userClubId).filter((p) => !p.status.injuryId);
     const buyers = Object.values(w.clubs).filter((c) => c.id !== w.userClubId);
     if (mine.length > fmt.minSquadSize && buyers.length) {
@@ -296,6 +296,14 @@ export function processContracts(world: WorldState, date: GameDate): WorldState 
   let w = world;
   for (const p of Object.values(world.players)) {
     if (p.clubId === FREE_AGENT || p.clubId === RETIRED) continue;
+    if (w.modeState?.kind === 'player' && w.modeState.userPlayerId === p.id && p.contract.endDate < date) {
+      // 선수 모드: 내 선수는 계약이 끝나면 현재 능력 기준 주급으로 2년 재계약
+      const year = Number(date.slice(0, 4));
+      const wage = Math.max(p.contract.wage, wageDemand(p, date, w.clubs[p.clubId].reputation));
+      w = { ...w, players: { ...w.players, [p.id]: { ...w.players[p.id], contract: { startDate: date, endDate: `${year + 2}-12-31`, wage } } } };
+      w = addInbox(w, { kind: 'info', title: '재계약', body: `구단과 ${year + 2}년 말까지 재계약했습니다. 새 주급 ${wage.toLocaleString()}만 원.` });
+      continue;
+    }
     if (p.contract.endDate < date) {
       w = executeTransfer(w, { playerId: p.id, toClubId: FREE_AGENT, fee: 0, wage: 0, years: 0, type: 'contract-expired' });
       if (p.clubId === world.userClubId) w = addInbox(w, { kind: 'info', title: `${p.name} 계약 만료`, body: `${p.name} 선수의 계약이 끝나 팀을 떠났습니다.` });

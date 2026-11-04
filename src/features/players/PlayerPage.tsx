@@ -8,6 +8,9 @@ import { Bar, EmptyState, Panel } from '../../components/ui';
 import { TestDataBadge } from '../../components/TestDataBadge';
 import { POSITIONS, FREE_AGENT, RETIRED, type Club } from '../../types';
 import { NegotiationPanel, OwnPlayerPanel } from '../transfers/PlayerActions';
+import { CareerPanel } from '../player/CareerPanel';
+import { userPlayerOf } from '../../engine/player/userPlayer';
+import { capsOf } from '../../engine/modes';
 
 const FREE_AGENT_CLUB: Club = { id: FREE_AGENT, name: '무소속', shortName: '무소속', city: '-', stadium: '-', reputation: 0, colors: { primary: '#334155', secondary: '#1e293b' }, crestAssetId: null, finances: { balance: 0, transferBudget: 0, wageBudget: 0 }, meta: { sourceType: 'test', source: '', sourceUpdatedAt: '', licenseStatus: 'none', createdAt: '', updatedAt: '' } };
 import { formatShort } from '../../utils/date';
@@ -58,7 +61,18 @@ export function PlayerPage() {
             </div>
           </Panel>
 
-          {player.clubId === RETIRED ? null : isMine ? <OwnPlayerPanel player={player} /> : <NegotiationPanel key={player.id} player={player} />}
+          {userPlayerOf(world)?.id === player.id && player.clubId !== RETIRED && <CareerPanel player={player} />}
+          {userPlayerOf(world)?.id === player.id && player.clubId === RETIRED && (
+            <Panel title="은퇴 카드">
+              <div className="grid grid-cols-2 gap-3 text-center sm:grid-cols-4" data-testid="retire-card">
+                {[['통산 출전', career.appearances], ['통산 득점', career.goals], ['통산 도움', career.assists], ['최고 OVR', player.peakOvr]].map(([k, v]) => (
+                  <div key={k as string} className="rounded-lg bg-navy-900 p-3"><div className="text-2xl font-black text-gold-300">{v}</div><div className="text-xs text-slate-400">{k}</div></div>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-slate-400">우승·수상 {player.honours.length}회. 새 선수로 다시 시작하려면 타이틀에서 새 게임을 만드세요.</p>
+            </Panel>
+          )}
+          {player.clubId === RETIRED ? null : isMine ? <OwnPlayerPanel player={player} /> : capsOf(world).transfers ? <NegotiationPanel key={player.id} player={player} /> : null}
 
           <Panel title="이번 시즌">
             <div className="grid grid-cols-3 gap-3 text-center sm:grid-cols-6">

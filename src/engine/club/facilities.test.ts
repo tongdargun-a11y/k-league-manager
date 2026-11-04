@@ -21,13 +21,13 @@ describe('PHASE 2 구단 시설·팬', () => {
     expect(r.ok).toBe(true);
     expect(clubState(r.world)!.facilities.stadium).toBe(3);
     expect(r.world.clubs.stormhaven.finances.balance).toBe(before - upgradeCost(2));
-    expect(w.modeState!.facilities.stadium).toBe(2); // 원본 불변
+    expect(clubState(w)!.facilities.stadium).toBe(2); // 원본 불변
   });
   it('잔고 부족·최고 레벨이면 거절', () => {
     const w = club();
     w.clubs.stormhaven = { ...w.clubs.stormhaven, finances: { ...w.clubs.stormhaven.finances, balance: 0 } };
     expect(upgradeFacility(w, 'youth').ok).toBe(false);
-    const m = club(); m.modeState = { ...m.modeState!, facilities: { stadium: 5, training: 5, youth: 5 } };
+    const m = club(); m.modeState = { ...clubState(m)!, facilities: { stadium: 5, training: 5, youth: 5 } };
     expect(upgradeFacility(m, 'training').ok).toBe(false);
   });
   it('효과: 기본 레벨은 1배, 레벨이 오르면 커진다', () => {
@@ -48,8 +48,8 @@ describe('PHASE 2 구단 시설·팬', () => {
   });
   it('팬 만족도: 승 +3, 패 -3, 0~100', () => {
     const w = club();
-    expect(applyFanResult(w, 2, 0).modeState!.fanSatisfaction).toBe(63);
-    expect(applyFanResult(w, 0, 1).modeState!.fanSatisfaction).toBe(57);
+    expect(clubState(applyFanResult(w, 2, 0))!.fanSatisfaction).toBe(63);
+    expect(clubState(applyFanResult(w, 0, 1))!.fanSatisfaction).toBe(57);
     const mgr = createNewWorld({ managerName: '가', clubId: 'stormhaven', mode: 'manager' });
     expect(applyFanResult(mgr, 2, 0)).toBe(mgr);
   });
