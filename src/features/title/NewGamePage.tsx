@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+import type { GameMode } from '../../types';
+import { MODE_CAPABILITIES, MODE_INFO } from '../../engine/modes';
 import { Link, useSearchParams } from 'react-router-dom';
 import { datasetRepository, type DatasetSummary } from '../../repositories/saveRepository';
 import { useNavigate } from 'react-router-dom';
@@ -32,6 +34,7 @@ export function NewGamePage() {
   const [params] = useSearchParams();
   const [clubId, setClubId] = useState<string | null>(params.get('club'));
   const [busy, setBusy] = useState(false);
+  const [mode, setMode] = useState<GameMode>('manager');
   const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
   const [datasetId, setDatasetId] = useState<string>(params.get('ds') ?? '');
   useEffect(() => { datasetRepository.list().then(setDatasets).catch(() => setDatasets([])); }, []);
@@ -42,7 +45,7 @@ export function NewGamePage() {
   const start = async () => {
     if (!canStart || !clubId) return;
     setBusy(true);
-    await newGame(name.trim(), clubId, datasetId || null);
+    await newGame(name.trim(), clubId, datasetId || null, mode);
     navigate('/game');
   };
 
@@ -52,8 +55,25 @@ export function NewGamePage() {
       <h1 className="text-2xl font-black text-white">새 게임</h1>
       <p className="mt-1 text-sm text-slate-400">감독 이름을 정하고 지휘할 구단을 선택하세요.</p>
 
-      <section className="panel mt-6 p-5">
-        <label className="panel-title" htmlFor="mgr">1. 감독 이름</label>
+      <section className="panel mt-6 p-5" aria-label="플레이 모드">
+        <h2 className="panel-title">플레이 모드</h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          {(Object.keys(MODE_INFO) as GameMode[]).map((m) => {
+            const ok = MODE_CAPABILITIES[m].playable;
+            return (
+              <button key={m} type="button" disabled={!ok} data-testid={`mode-${m}`} onClick={() => setMode(m)}
+                className={`rounded-lg border p-3 text-left transition ${mode === m ? 'border-gold-400 bg-navy-700' : 'border-navy-600 hover:border-navy-500'} ${ok ? '' : 'cursor-not-allowed opacity-50'}`}>
+                <div className="font-bold text-white">{MODE_INFO[m].label} 모드</div>
+                <div className="mt-1 text-xs text-slate-400">{MODE_INFO[m].desc}</div>
+              </button>
+            );
+          })}
+        </div>
+        <p className="mt-2 text-xs text-slate-500">모드마다 세이브와 시즌 진행이 완전히 따로 저장됩니다.</p>
+      </section>
+
+      <section className="panel mt-4 p-5">
+        <label className="panel-title" htmlFor="mgr">1. {MODE_INFO[mode].role} 이름</label>
         <input id="mgr" className="input mt-2 max-w-sm" maxLength={20} placeholder="예: 홍길동" value={name} onChange={(e) => setName(e.target.value)} />
       </section>
 

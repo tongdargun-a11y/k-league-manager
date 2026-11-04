@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { NavLink, Outlet, Navigate, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { canOpen, modeOf, MODE_INFO } from '../engine/modes';
 import { CalendarDays, Dumbbell, LayoutDashboard, ListOrdered, Menu, Save, Shirt, Swords, Users, X, LogOut, Loader2, ArrowLeftRight, Wallet } from 'lucide-react';
 import { useGame } from '../store/gameStore';
 import { ClockControls } from '../components/ClockControls';
@@ -28,14 +29,18 @@ export function AppLayout() {
   const exit = useGame((s) => s.exitToTitle);
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   useGameClock();
 
   if (!world) return <Navigate to="/" replace />;
+  if (!canOpen(world, location.pathname)) return <Navigate to="/game" replace />;
+  const mode = modeOf(world);
+  const roleLabel = mode === 'classic' ? '감독' : MODE_INFO[mode].role;
   const club = world.clubs[world.userClubId];
 
   const nav = (
     <nav className="flex flex-col gap-1" aria-label="주 메뉴">
-      {NAV.map(({ to, label, icon: Icon, end }) => (
+      {NAV.filter(({ to }) => canOpen(world, to)).map(({ to, label, icon: Icon, end }) => (
         <NavLink
           key={to}
           to={to}
@@ -57,7 +62,7 @@ export function AppLayout() {
       <ClubBadge club={club} size={40} />
       <div className="min-w-0">
         <div className="truncate text-sm font-bold text-white">{club.name}</div>
-        <div className="truncate text-xs text-slate-400">{world.manager.name} 감독</div>
+        <div className="truncate text-xs text-slate-400">{world.manager.name} {roleLabel}{mode !== 'classic' ? ` · ${MODE_INFO[mode].label} 모드` : ''}</div>
       </div>
     </div>
   );

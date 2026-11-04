@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { ClockSpeed, Lineup, Tactic, WorldState } from '../types';
+import type { ClockSpeed, GameMode, Lineup, Tactic, WorldState } from '../types';
 import {
   advanceDay, applyMatchResult, checkSeasonEnd, createNewWorld, fixtureFor, prepareMatch, simulateDueAIFixtures,
 } from '../engine/world';
@@ -7,6 +7,8 @@ import {
   autoReplaceInjured, canSubstitute, changeTactic, simulateToEnd, stepMinute, substitute, type MatchState, type SideKey,
 } from '../engine/match/engine';
 import { validateLineup } from '../engine/match/lineup';
+import { uid } from '../utils/id';
+import { capsOf } from '../engine/modes';
 import { saveRepository, prefs, datasetRepository, type SaveListItem } from '../repositories/saveRepository';
 
 export type LiveSpeed = 'slow' | 'normal' | 'fast';
@@ -37,7 +39,7 @@ interface GameStore {
 
   // 세이브
   refreshSaves(): Promise<void>;
-  newGame(managerName: string, clubId: string, datasetId?: string | null): Promise<void>;
+  newGame(managerName: string, clubId: string, datasetId?: string | null, mode?: GameMode): Promise<void>;
   /** 엔진 함수로 월드를 갱신 (이적·재정·훈련 등 화면 조작용) */
   mutate(fn: (w: WorldState) => WorldState): void;
   loadGame(id: string): Promise<boolean>;
@@ -95,9 +97,9 @@ export const useGame = create<GameStore>((set, get) => ({
     }
   },
 
-  async newGame(managerName, clubId, datasetId) {
+  async newGame(managerName, clubId, datasetId, mode) {
     const ds = datasetId ? await datasetRepository.get(datasetId) : undefined;
-    const world = createNewWorld({ managerName, clubId, importedPlayers: ds?.players });
+    const world = createNewWorld({ managerName, clubId, importedPlayers: ds?.players, mode, worldId: uid('world') });
     set({ world, saveId: null, legacySourceId: null, saveName: '', saveCreatedAt: null, clockSpeed: 'paused', live: null, liveRunning: false, daysSinceSave: 0 });
     await get().saveGame({ silent: true });
   },
@@ -185,7 +187,7 @@ export const useGame = create<GameStore>((set, get) => ({
     if (!world) return;
     if (speed !== 'paused') {
       const today = fixtureFor(world, world.clock.gameDate, world.userClubId);
-      if (today && today.status !== 'played') {
+      if (today && today.status !== 'played' && capsOf(world).liveMatch) {
         get().toast('오늘은 경기일입니다. 경기를 먼저 진행하세요.', 'warn');
         set({ clockSpeed: 'paused' });
         return;
@@ -225,19 +227,20 @@ export const useGame = create<GameStore>((set, get) => ({
 
   setLineup(lineup) {
     const { world } = get();
-    if (!world) return;
+    if (!world || !capsOf(world).tactics) return;
     set({ world: { ...world, userLineup: lineup, tactics: { ...world.tactics, [world.userClubId]: { ...world.tactics[world.userClubId], formation: lineup.formation } } } });
   },
 
   setTactic(tactic) {
     const { world } = get();
-    if (!world) return;
+    if (!world || !capsOf(world).tactics) return;
     set({ world: { ...world, tactics: { ...world.tactics, [world.userClubId]: tactic }, userLineup: { ...world.userLineup, formation: tactic.formation } } });
   },
 
   startMatch() {
     const { world, live } = get();
     if (!world) return { ok: false, reason: '게임이 없습니다.' };
+    if (!capsOf(world).liveMatch) return { ok: false, reason: '이 모드에서는 경기를 직접 지휘하지 않습니다.' };
     if (live && live.phase !== 'finished') return { ok: true };
     const fixture = fixtureFor(world, world.clock.gameDate, world.userClubId);
     if (!fixture || fixture.status === 'played') return { ok: false, reason: '오늘은 경기가 없습니다.' };

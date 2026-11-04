@@ -5,6 +5,7 @@ import { useGame } from '../../store/gameStore';
 import { prefs } from '../../repositories/saveRepository';
 import { DATA_NOTICE } from '../../data';
 import type { SaveListItem } from '../../repositories/saveRepository';
+import { MODE_INFO } from '../../engine/modes';
 import { formatKorean } from '../../utils/date';
 import { ClubBadge } from '../../components/ClubBadge';
 import { TestDataBadge } from '../../components/TestDataBadge';
@@ -84,7 +85,7 @@ function SaveRow({ s, onOpen, onDelete }: { s: SaveListItem; onOpen: (id: string
       <ClubBadge club={s.club} size={30} />
       <button className="min-w-0 flex-1 text-left" onClick={() => onOpen(s.id)}>
         <div className="truncate text-sm font-semibold text-white hover:text-gold-400">
-          {s.name} {s.legacy && <span className="ml-1 rounded bg-slate-500/30 px-1.5 text-[10px] text-slate-300">구버전 v{s.schemaVersion}</span>}
+          {s.name} {s.legacy && <span className="ml-1 rounded bg-slate-500/30 px-1.5 text-[10px] text-slate-300">구버전 v{s.schemaVersion}</span>}{s.mode && <span className="ml-1 rounded bg-gold-500/20 px-1.5 text-[10px] text-gold-300">{MODE_INFO[s.mode].label}</span>}
         </div>
         <div className="text-xs text-slate-400">{s.club?.name ?? s.selectedClubId} · 게임 날짜 {formatKorean(s.gameDate, false)} · 저장 {new Date(s.updatedAt).toLocaleString('ko-KR')}</div>
       </button>

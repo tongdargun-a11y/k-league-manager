@@ -45,6 +45,8 @@ const MIGRATIONS: Record<number, (save: SaveGame) => SaveGame> = {
   // v4 → v5: 데이터 변경 없음. v5부터 저장된 세이브는 PHASE 0 이후 세이브(구버전 아님)라는 표시.
   // 구버전 원본은 이 변환 결과로 덮어쓰지 않는다 (gameStore.loadGame 참고).
   4: (save) => ({ ...save, schemaVersion: 5 }),
+  // v5 → v6: 플레이 모드 필드 추가(선택). 값이 없으면 기존 방식(classic)으로 동작하므로 데이터 변경 없음
+  5: (save) => ({ ...save, schemaVersion: 6 }),
 };
 
 export class SaveVersionError extends Error {}

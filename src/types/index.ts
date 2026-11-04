@@ -469,7 +469,14 @@ export interface TrainingReport {
   entries: TrainingReportEntry[];
 }
 
+/** 플레이 모드. 없으면 기존 방식(classic) */
+export type GameMode = 'club' | 'manager' | 'player';
+
 export interface WorldState {
+  /** 플레이 모드 (PHASE 1~). 세이브마다 독립 */
+  mode?: GameMode;
+  /** 새 게임마다 만드는 월드 식별자 (추적·표시용) */
+  worldId?: string;
   competition: Competition;
   season: Season;
   clubs: Record<string, Club>;
@@ -518,6 +525,8 @@ export interface SaveGame {
   gameDate: GameDate;
   managerName: string;
   selectedClubId: string;
+  /** world.mode 복사 (목록 표시용) */
+  mode?: GameMode;
   world: WorldState;
 }
 
