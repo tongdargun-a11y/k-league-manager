@@ -134,6 +134,8 @@ export interface Player {
   attributesSource?: 'imported' | 'estimated';
   /** 개인 훈련 집중 분야 (없으면 팀 훈련을 따름) */
   trainingFocus?: TrainingFocus | null;
+  /** 임대 중이면 원소속 구단과 복귀 시점 (PHASE 4) */
+  loan?: { parentClubId: string; until: GameDate };
   /** 픽셀 캐릭터 외형 (없으면 선수 id로 결정적으로 생성) */
   appearance?: PlayerAppearance;
 }
@@ -461,7 +463,7 @@ export interface Transfer {
   toClubId: string;
   fee: number;
   date: GameDate;
-  type: 'transfer' | 'free' | 'release' | 'contract-expired';
+  type: 'transfer' | 'free' | 'release' | 'contract-expired' | 'loan' | 'loan-return';
 }
 
 export type OfferStatus = 'pending' | 'accepted' | 'rejected' | 'countered' | 'withdrawn' | 'completed' | 'expired';

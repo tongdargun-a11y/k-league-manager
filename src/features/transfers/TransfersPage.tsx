@@ -142,7 +142,7 @@ export function TransfersPage() {
                     <span className="w-16 text-xs text-slate-400">{formatShort(t.date)}</span>
                     <Link to={`/game/player/${t.playerId}`} className="flex-1 truncate text-white hover:underline">{p?.name ?? t.playerId}</Link>
                     <span className="text-xs">{name(t.fromClubId)} → {name(t.toClubId)}</span>
-                    <span className="w-24 text-right text-xs tabular-nums">{t.fee ? formatMoney(t.fee) : { free: '자유 계약', release: '방출', 'contract-expired': '계약 만료', transfer: '-' }[t.type]}</span>
+                    <span className="w-24 text-right text-xs tabular-nums">{t.fee ? formatMoney(t.fee) : { free: '자유 계약', release: '방출', 'contract-expired': '계약 만료', transfer: '-', loan: '임대', 'loan-return': '임대 복귀' }[t.type]}</span>
                   </li>
                 );
               })}

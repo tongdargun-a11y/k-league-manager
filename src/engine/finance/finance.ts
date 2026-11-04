@@ -37,7 +37,8 @@ export function monthlyFixedIncome(club: Club): { broadcast: number; sponsor: nu
 
 /** 월 운영비 */
 export function monthlyOperations(club: Club): number {
-  return Math.round(9000 + club.reputation * 120);
+  // PHASE 4 밸런스: 기본 운영비 상향 (모든 구단이 매년 큰 흑자를 내던 문제 완화)
+  return Math.round(22000 + club.reputation * 120);
 }
 
 /** 홈 경기 관중 수 추정 (평판·순위 기반) */

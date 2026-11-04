@@ -1,3 +1,4 @@
+import { returnLoans } from '../transfers/transfers';
 import { clubState, youthBonus } from '../club/facilities';
 import type { Club, Fixture, Player, PlayerAttributes, Position, SeasonRecord, WorldState } from '../../types';
 import { RETIRED } from '../../types';
@@ -102,12 +103,14 @@ function makeYouth(club: Club, rng: Rng, idx: number, year: number, usedNumbers:
  * 끝난 시즌을 결산하고 다음 시즌을 시작한다. 순수 함수.
  * 결산 기록 저장 → 노화·은퇴 → 유소년 입단 → 새 일정 생성. 승강제는 2부 리그 데이터가 없어 아직 적용하지 않는다.
  */
-export function startNextSeason(world: WorldState): WorldState {
+export function startNextSeason(input: WorldState): WorldState {
+  let world = input;
   if (world.season.status !== 'finished') throw new Error('시즌이 아직 끝나지 않았습니다.');
   const record = buildSeasonRecord(world);
   const year = Number(world.season.id.split('-').pop()) + 1;
   const seasonId = `${world.competition.id}-${year}`;
   const rng = createRng(hashString(`${world.worldSeed}:rollover:${year}`));
+  world = returnLoans(world);
   const on = `${year - 1}-12-31`;
 
   // 노화·은퇴

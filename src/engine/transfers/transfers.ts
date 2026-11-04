@@ -7,7 +7,7 @@ import type { CompetitionFormat, GameDate, IncomingOffer, Player, Transfer, Worl
 import { FREE_AGENT, RETIRED } from '../../types';
 import { playerOvr, positionGroup } from '../ratings/ovr';
 import { ageOn, addDays, diffDays } from '../../utils/date';
-import { createRng, hashString } from '../../utils/rng';
+import { createRng, hashString, type Rng } from '../../utils/rng';
 import { recordTx, weeklyWageBill } from '../finance/finance';
 import { addInbox } from '../inbox';
 
@@ -270,6 +270,10 @@ export function processTransferDay(world: WorldState, date: GameDate): WorldStat
 
   if (!isWindowOpen(fmt, date)) return w;
 
+  // AI 구단끼리 이적 (하루 6% 확률, 사용자 제안과 다른 난수열)
+  const aiRng = createRng(hashString(`${w.worldSeed}:ai-transfer:${date}`));
+  if (aiRng.chance(0.06)) w = aiToAiTransfer(w, date, aiRng);
+
   // AI → 사용자 선수 제안 (하루 8% 확률, 대기 제안 2개 이하일 때)
   const pending = w.incomingOffers.filter((o) => o.status === 'pending').length;
   if (w.mode !== 'player' && pending < 2 && rng.chance(0.08)) {
@@ -302,6 +306,13 @@ export function processContracts(world: WorldState, date: GameDate): WorldState 
       const wage = Math.max(p.contract.wage, wageDemand(p, date, w.clubs[p.clubId].reputation));
       w = { ...w, players: { ...w.players, [p.id]: { ...w.players[p.id], contract: { startDate: date, endDate: `${year + 2}-12-31`, wage } } } };
       w = addInbox(w, { kind: 'info', title: '재계약', body: `구단과 ${year + 2}년 말까지 재계약했습니다. 새 주급 ${wage.toLocaleString()}만 원.` });
+      continue;
+    }
+    if (p.contract.endDate < date && p.clubId !== w.userClubId && w.clubs[p.clubId] && (ageOn(p.birthDate, date) < 33 || squadOf(w, p.clubId).length <= 22)) {
+      // AI 구단: 33세 미만이거나 인원이 부족하면 2년 재계약 (PHASE 4 밸런스: 선수단이 계속 줄어드는 문제)
+      const year = Number(date.slice(0, 4));
+      const wage = Math.max(p.contract.wage, wageDemand(p, date, w.clubs[p.clubId].reputation));
+      w = { ...w, players: { ...w.players, [p.id]: { ...w.players[p.id], contract: { startDate: date, endDate: `${year + 2}-12-31`, wage } } } };
       continue;
     }
     if (p.contract.endDate < date) {
@@ -353,4 +364,93 @@ function boardDecideOffer(world: WorldState, offerId: string): WorldState {
   }
   const w = rejectIncomingOffer(world, offerId);
   return addInbox(w, { kind: 'info', title: `이사회 결정: ${p.name} 잔류`, body: `이사회가 ${buyer.name}의 ${formatShortMoney(o.fee)} 제안을 거절했습니다.` });
+}
+
+// ───────────────────────── AI 구단끼리 이적 · 임대 (PHASE 4) ─────────────────────────
+
+const isUserPlayer = (w: WorldState, id: string) => w.modeState?.kind === 'player' && w.modeState.userPlayerId === id;
+
+/**
+ * AI 구단 하나가 가장 약한 포지션 그룹을 보강한다.
+ * 다른 AI 구단 선수 중 그 그룹 1순위보다 좋은 선수를, 판매 구단 요구액(시장 가치×중요도)에 산다.
+ * 사용자 구단·내 선수·임대 중 선수는 대상이 아니다.
+ */
+export function aiToAiTransfer(world: WorldState, date: GameDate, rng: Rng): WorldState {
+  const fmt = world.competition.format;
+  const buyers = Object.values(world.clubs).filter((c) => c.id !== world.userClubId && squadOf(world, c.id).length < fmt.maxSquadSize);
+  if (!buyers.length) return world;
+  const buyer = rng.weighted(buyers, (c) => Math.max(1, c.finances.transferBudget));
+  const squad = squadOf(world, buyer.id);
+  const groups = ['GK', 'DF', 'MF', 'FW'] as const;
+  const bestAt = (g: string) => Math.max(0, ...squad.filter((p) => positionGroup(p.positions[0]) === g).map(playerOvr));
+  const weakest = groups.slice().sort((a, b) => bestAt(a) - bestAt(b))[0];
+  const bar = bestAt(weakest);
+  const foreignFull = squad.filter(isForeign).length >= fmt.maxForeignPlayers;
+  const targets = Object.values(world.players).filter((p) =>
+    p.clubId !== buyer.id && p.clubId !== world.userClubId && world.clubs[p.clubId] && !p.loan && !isUserPlayer(world, p.id) &&
+    positionGroup(p.positions[0]) === weakest && playerOvr(p) > bar && !(foreignFull && isForeign(p)));
+  for (const t of targets.sort((a, b) => playerOvr(a) - playerOvr(b))) {
+    const left = minAtGroup(world, t.clubId, t.id);
+    if (left.total < fmt.minSquadSize || (t.positions[0] === 'GK' && left.gk < 2)) continue;
+    const fee = roundMoney(marketValue(t, date) * importance(world, t));
+    if (fee > buyer.finances.transferBudget) continue;
+    const from = world.clubs[t.clubId].shortName;
+    let w = executeTransfer(world, { playerId: t.id, toClubId: buyer.id, fee, wage: wageDemand(t, date, buyer.reputation), years: 3 });
+    w = addInbox(w, { kind: 'info', title: `이적 소식: ${t.name}`, body: `${t.name} 선수가 ${from}에서 ${buyer.shortName}(으)로 이적했습니다. 이적료 ${formatShortMoney(fee)}.` });
+    return w;
+  }
+  return world;
+}
+
+/** 임대를 받아줄 구단: 인원 여유가 있는 AI 구단 중 그 포지션이 가장 약한 곳 */
+export function loanDestination(world: WorldState, playerId: string): string | null {
+  const p = world.players[playerId];
+  const g = positionGroup(p.positions[0]);
+  const fmt = world.competition.format;
+  const cands = Object.values(world.clubs).filter((c) => c.id !== p.clubId && c.id !== world.userClubId && squadOf(world, c.id).length < fmt.maxSquadSize);
+  const best = (cid: string) => Math.max(0, ...squadOf(world, cid).filter((x) => positionGroup(x.positions[0]) === g).map(playerOvr));
+  return cands.sort((a, b) => best(a.id) - best(b.id))[0]?.id ?? null;
+}
+
+export function canLoanOut(world: WorldState, playerId: string): SigningCheck {
+  const p = world.players[playerId];
+  if (!p || p.clubId !== world.userClubId) return { ok: false, reason: '우리 팀 선수가 아닙니다.' };
+  if (p.loan) return { ok: false, reason: '이미 임대 중인 선수입니다.' };
+  if (!isWindowOpen(world.competition.format, world.clock.gameDate)) return { ok: false, reason: '이적시장 기간에만 임대를 보낼 수 있습니다.' };
+  if (squadOf(world, world.userClubId).length - 1 < world.competition.format.minSquadSize) return { ok: false, reason: `선수단이 최소 인원(${world.competition.format.minSquadSize}명)보다 적어집니다.` };
+  if (!loanDestination(world, playerId)) return { ok: false, reason: '받아줄 구단이 없습니다.' };
+  return { ok: true };
+}
+
+/** 시즌 끝까지 임대. 주급은 임대 구단이 낸다(게임 단순화). 시즌이 바뀌면 원소속으로 돌아온다. */
+export function loanOut(world: WorldState, playerId: string): WorldState {
+  if (!canLoanOut(world, playerId).ok) return world;
+  const p = world.players[playerId];
+  const to = loanDestination(world, playerId)!;
+  const today = world.clock.gameDate;
+  const moved: Player = { ...p, clubId: to, shirtNumber: nextShirtNumber(world, to, p.shirtNumber), loan: { parentClubId: p.clubId, until: world.season.endDate } };
+  const lu = world.userLineup;
+  let w: WorldState = {
+    ...world,
+    players: { ...world.players, [p.id]: moved },
+    userLineup: { ...lu, starters: lu.starters.filter((id) => id !== p.id), bench: lu.bench.filter((id) => id !== p.id), captainId: lu.captainId === p.id ? null : lu.captainId },
+    transfers: [{ id: `tr-${today}-${p.id}-${world.transfers.length}`, playerId: p.id, fromClubId: p.clubId, toClubId: to, fee: 0, date: today, type: 'loan' as const }, ...world.transfers],
+  };
+  w = addInbox(w, { kind: 'info', title: `임대: ${p.name}`, body: `${p.name} 선수를 시즌이 끝날 때까지 ${world.clubs[to].name}에 임대 보냈습니다.` });
+  return w;
+}
+
+/** 임대 선수 복귀 (새 시즌 시작 시) */
+export function returnLoans(world: WorldState): WorldState {
+  const players = { ...world.players };
+  const transfers = [...world.transfers];
+  for (const p of Object.values(world.players)) {
+    if (!p.loan) continue;
+    const { parentClubId } = p.loan;
+    const back: Player = { ...p, clubId: parentClubId, loan: undefined };
+    delete back.loan;
+    players[p.id] = back;
+    transfers.unshift({ id: `tr-${world.clock.gameDate}-${p.id}-ret`, playerId: p.id, fromClubId: p.clubId, toClubId: parentClubId, fee: 0, date: world.clock.gameDate, type: 'loan-return' });
+  }
+  return { ...world, players, transfers };
 }

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Handshake, UserMinus, FileSignature } from 'lucide-react';
 import { useGame, useWorld } from '../../store/gameStore';
-import { boardRequestSigning, canRelease, canSign, evaluateBid, evaluateContract, executeTransfer, marketValue, releaseCost, releasePlayer, renewContract, wageDemand, type BidResponse } from '../../engine/transfers/transfers';
+import { boardRequestSigning, canLoanOut, loanDestination, loanOut, canRelease, canSign, evaluateBid, evaluateContract, executeTransfer, marketValue, releaseCost, releasePlayer, renewContract, wageDemand, type BidResponse } from '../../engine/transfers/transfers';
 import { formatMoney } from '../../engine/finance/finance';
 import { FOCUS_LABEL } from '../../engine/training/training';
 import { Panel } from '../../components/ui';
@@ -174,6 +174,14 @@ export function OwnPlayerPanel({ player }: { player: Player }) {
             navigate('/game/squad');
           }}><UserMinus size={16} /> 방출 (보상금 {formatMoney(cost)})</button>
           {!rel.ok && <p className="mt-1 text-xs text-slate-500">{rel.reason}</p>}
+          <button className="btn-ghost mt-2" data-testid="loan-out" disabled={!canLoanOut(world, player.id).ok} onClick={() => {
+            const to = loanDestination(world, player.id);
+            if (!to || !window.confirm(`${player.name} 선수를 시즌이 끝날 때까지 ${world.clubs[to].name}에 임대 보낼까요?`)) return;
+            mutate((w) => loanOut(w, player.id));
+            toast(`${player.name} 임대 완료`, 'info');
+            navigate('/game/squad');
+          }}>임대 보내기{loanDestination(world, player.id) ? ` (${world.clubs[loanDestination(world, player.id)!].shortName})` : ''}</button>
+          {!canLoanOut(world, player.id).ok && <p className="mt-1 text-xs text-slate-500">{canLoanOut(world, player.id).reason}</p>}
         </div>}
       </div>
     </Panel>
