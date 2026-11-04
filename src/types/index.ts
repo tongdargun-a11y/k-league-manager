@@ -134,6 +134,20 @@ export interface Player {
   attributesSource?: 'imported' | 'estimated';
   /** 개인 훈련 집중 분야 (없으면 팀 훈련을 따름) */
   trainingFocus?: TrainingFocus | null;
+  /** 픽셀 캐릭터 외형 (없으면 선수 id로 결정적으로 생성) */
+  appearance?: PlayerAppearance;
+}
+
+export interface PlayerAppearance {
+  v: 1;
+  body: number;
+  skin: number;
+  face: number;
+  eyes: number;
+  hair: number;
+  hairColor: number;
+  facialHair: number;
+  accessory?: number;
 }
 
 /** 무소속 선수의 clubId */
