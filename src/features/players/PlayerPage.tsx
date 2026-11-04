@@ -56,6 +56,7 @@ export function PlayerPage() {
             <div className="mt-3 flex flex-wrap gap-2 text-xs">
               {injury && <span className="rounded bg-rose-500/20 px-2 py-0.5 text-rose-300">부상: {injury.type} (복귀 예정 {formatShort(injury.expectedReturnDate)})</span>}
               {player.status.suspendedMatches > 0 && <span className="rounded bg-gold-500/20 px-2 py-0.5 text-gold-300">출전 정지 {player.status.suspendedMatches}경기</span>}
+              {player.loan && <span className="rounded bg-sky-500/20 px-2 py-0.5 text-sky-300">임대 중 · 원소속 {world.clubs[player.loan.parentClubId]?.shortName} (~{formatShort(player.loan.until)})</span>}
               <span className="rounded bg-navy-700 px-2 py-0.5 text-slate-300">누적 경고 {player.status.yellowCards}</span>
               <span className="rounded bg-navy-700 px-2 py-0.5 text-slate-300">계약 ~{player.contract.endDate} · 주급 {player.contract.wage.toLocaleString()}만 원(추정)</span>
             </div>
