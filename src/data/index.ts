@@ -52,5 +52,19 @@ export const TEST_COMPETITION: Competition = {
   format: TEST_FORMAT,
 };
 
+/** 재정 등급 배수 (초기 잔고·이적 예산에 적용) */
+export const FINANCE_TIER_MULT: Record<NonNullable<Club['financeTier']>, number> = { S: 1.6, A: 1.3, B: 1.0, C: 0.8, D: 0.6 };
+export const financeMult = (c: Pick<Club, 'financeTier'>) => (c.financeTier ? FINANCE_TIER_MULT[c.financeTier] : 1);
+
+export type SeasonLength = 'long' | 'short';
+/** 시즌 길이별 대회 규칙. short = 2회전 22라운드 */
+export function competitionFor(length: SeasonLength = 'long'): Competition {
+  if (length === 'long') return TEST_COMPETITION;
+  return {
+    ...TEST_COMPETITION,
+    format: { ...TEST_FORMAT, roundRobinCycles: 2, description: '솔레아 프리미어 디비전 (짧은 시즌): 12팀 2회전(22라운드) 리그. 이적시장 기간·외국인 수 등은 게임 설정값입니다.' },
+  };
+}
+
 export const DEFAULT_SEASON_YEAR = 2026;
 export const DEFAULT_START_DATE = '2026-02-16';

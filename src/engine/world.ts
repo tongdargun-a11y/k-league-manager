@@ -6,7 +6,7 @@ import type {
   Club, Fixture, InboxItem, Injury, Lineup, Manager, MatchReport, Player, PlayerCareerStats, PlayerSeasonStats,
   Tactic, WorldState, GameMode,
 } from '../types';
-import { DEFAULT_START_DATE, TEST_CLUBS, TEST_COMPETITION, DEFAULT_SEASON_YEAR } from '../data';
+import { DEFAULT_START_DATE, TEST_CLUBS, TEST_COMPETITION, DEFAULT_SEASON_YEAR, competitionFor, financeMult, type SeasonLength } from '../data';
 import { generateTestSquad } from '../data/testPlayers';
 import { generateFixtures } from './calendar/schedule';
 import { computeStandings } from './league/standings';
@@ -37,13 +37,14 @@ export const isLegacySchema = (schemaVersion: number) => schemaVersion <= LEGACY
 
 const AI_FORMATIONS: Tactic['formation'][] = ['4-4-2', '4-3-3', '4-2-3-1', '3-5-2', '4-1-4-1', '3-4-3'];
 
-export function createNewWorld(params: { managerName: string; clubId: string; seed?: number; clubs?: Club[]; importedPlayers?: Player[]; mode?: GameMode; worldId?: string }): WorldState {
+export function createNewWorld(params: { managerName: string; clubId: string; seed?: number; clubs?: Club[]; importedPlayers?: Player[]; mode?: GameMode; worldId?: string; seasonLength?: SeasonLength }): WorldState {
   const clubs = params.clubs ?? TEST_CLUBS;
   if (!clubs.some((c) => c.id === params.clubId)) throw new Error(`존재하지 않는 구단: ${params.clubId}`);
   const seed = params.seed ?? hashString(params.managerName + params.clubId) ^ 0x5bd1e995;
   const startDate = DEFAULT_START_DATE;
   const seasonId = `${TEST_COMPETITION.id}-${DEFAULT_SEASON_YEAR}`;
-  const format = TEST_COMPETITION.format;
+  const competition = competitionFor(params.seasonLength);
+  const format = competition.format;
 
   const clubMap: Record<string, Club> = {};
   const players: Record<string, Player> = {};
@@ -58,8 +59,8 @@ export function createNewWorld(params: { managerName: string; clubId: string; se
     clubMap[c.id] = {
       ...c,
       finances: {
-        balance: Math.round(bill * 4.33 * 3 + c.reputation * 1500),
-        transferBudget: Math.round(c.reputation * 1000),
+        balance: Math.round(bill * 4.33 * 3 + c.reputation * 1500 * financeMult(c)),
+        transferBudget: Math.round(c.reputation * 1000 * financeMult(c)),
         wageBudget: Math.round((bill * 1.12) / 100) * 100,
       },
     };
@@ -89,7 +90,7 @@ export function createNewWorld(params: { managerName: string; clubId: string; se
   const world: WorldState = {
     ...(params.mode ? { mode: params.mode } : {}),
     ...(params.worldId ? { worldId: params.worldId } : {}),
-    competition: TEST_COMPETITION,
+    competition,
     season: {
       id: seasonId,
       competitionId: TEST_COMPETITION.id,

@@ -5,7 +5,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { datasetRepository, type DatasetSummary } from '../../repositories/saveRepository';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Check, Loader2 } from 'lucide-react';
-import { TEST_CLUBS } from '../../data';
+import { TEST_CLUBS, type SeasonLength } from '../../data';
 import { generateTestSquad } from '../../data/testPlayers';
 import { playerOvr } from '../../engine/ratings/ovr';
 import { useGame } from '../../store/gameStore';
@@ -35,6 +35,7 @@ export function NewGamePage() {
   const [clubId, setClubId] = useState<string | null>(params.get('club'));
   const [busy, setBusy] = useState(false);
   const [mode, setMode] = useState<GameMode>('manager');
+  const [seasonLength, setSeasonLength] = useState<SeasonLength>('long');
   const [datasets, setDatasets] = useState<DatasetSummary[]>([]);
   const [datasetId, setDatasetId] = useState<string>(params.get('ds') ?? '');
   useEffect(() => { datasetRepository.list().then(setDatasets).catch(() => setDatasets([])); }, []);
@@ -45,7 +46,7 @@ export function NewGamePage() {
   const start = async () => {
     if (!canStart || !clubId) return;
     setBusy(true);
-    await newGame(name.trim(), clubId, datasetId || null, mode);
+    await newGame(name.trim(), clubId, datasetId || null, mode, seasonLength);
     navigate('/game');
   };
 
@@ -128,6 +129,12 @@ export function NewGamePage() {
           <div className="flex-1">
             <div className="text-lg font-bold text-white">{club.name}</div>
             <div className="text-sm text-slate-400">이사회 목표: <span className="font-semibold text-gold-300">{expectation(club.reputation)}</span> · 선수단 {squadInfo[club.id].size}명 · 이적 예산 {(club.finances.transferBudget / 10000).toFixed(1)}억 원 (게임용 추정)</div>
+          </div>
+          <div className="flex gap-1 rounded-lg border border-navy-600 p-1 text-sm" role="radiogroup" aria-label="시즌 길이">
+            {([['long', '정규 33라운드'], ['short', '짧은 22라운드']] as const).map(([k, l]) => (
+              <button key={k} type="button" role="radio" aria-checked={seasonLength === k} data-testid={`season-${k}`} onClick={() => setSeasonLength(k)}
+                className={`rounded px-3 py-1.5 ${seasonLength === k ? 'bg-gold-500 font-bold text-navy-950' : 'text-slate-300 hover:bg-navy-700'}`}>{l}</button>
+            ))}
           </div>
           <button className="btn-gold px-6 py-3 text-base" disabled={!canStart} onClick={start}>
             {busy ? <Loader2 size={18} className="animate-spin" /> : <Check size={18} />} 부임하기

@@ -60,3 +60,25 @@ describe('플레이 모드 (PHASE 1-1)', () => {
     expect(useGame.getState().startMatch().ok).toBe(false);
   });
 });
+
+describe('PHASE 1-3 시즌 길이·재정 등급', () => {
+  it('짧은 시즌은 22라운드, 정규는 33라운드', async () => {
+    const { createNewWorld } = await import('./world');
+    const short = createNewWorld({ managerName: '가', clubId: 'stormhaven', seasonLength: 'short' });
+    const long = createNewWorld({ managerName: '가', clubId: 'stormhaven' });
+    const rounds = (w: typeof short) => Math.max(...w.fixtures.map((f) => f.round));
+    expect(rounds(short)).toBe(22);
+    expect(rounds(long)).toBe(33);
+    expect(short.competition.format.roundRobinCycles).toBe(2);
+    expect(short.fixtures.length).toBe(22 * 6);
+  });
+  it('재정 등급이 초기 이적 예산에 반영된다', async () => {
+    const { createNewWorld } = await import('./world');
+    const { TEST_CLUBS, FINANCE_TIER_MULT } = await import('../data');
+    const w = createNewWorld({ managerName: '가', clubId: 'stormhaven' });
+    for (const c of TEST_CLUBS) {
+      const m = c.financeTier ? FINANCE_TIER_MULT[c.financeTier] : 1;
+      expect(w.clubs[c.id].finances.transferBudget).toBe(Math.round(c.reputation * 1000 * m));
+    }
+  });
+});
